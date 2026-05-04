@@ -12,8 +12,7 @@
   --dim:       #445566;
 }
 
-* { box-sizing: border-box; }
-html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; }
 
 /* MapLibre resets */
 .maplibregl-canvas { display: block; }
@@ -31,7 +30,6 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   border-left: 3px solid var(--accent);
   border-radius: 4px;
   color: #fff;
-  font-family: 'Segoe UI', system-ui, sans-serif;
   font-size: 12px;
   padding: 10px 13px;
   width: 260px;

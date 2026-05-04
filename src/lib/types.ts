@@ -7,6 +7,9 @@ export type Category =
   | 'diplomacy'
   | 'society'
 
+export type Importance = 1 | 2 | 3 | 4 | 5
+export type MinZoom = 2 | 4 | 6 | 8
+
 export interface Story {
   id: string              // NewsAPI article URL hash
   lat: number
@@ -19,8 +22,8 @@ export interface Story {
   publishedAt: string     // ISO string
   ago: string             // Human-readable: "4m", "2h", "1d"
   category: Category
-  importance: number      // 1–5
-  minZoom: number         // 2 | 4 | 6 | 8
+  importance: Importance
+  minZoom: MinZoom
 }
 
 export const CATEGORY_COLORS: Record<Category, string> = {
@@ -43,4 +46,4 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   society:   'Society / Culture',
 }
 
-export const DOT_RADII: Record<number, number> = { 1: 4, 2: 7, 3: 10, 4: 13, 5: 16 }
+export const DOT_RADII: Record<Importance, number> = { 1: 4, 2: 7, 3: 10, 4: 13, 5: 16 }
