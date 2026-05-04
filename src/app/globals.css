@@ -1,26 +1,69 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg:        #060b18;
+  --panel:     #0b0f1f;
+  --panel-hdr: #0d1225;
+  --border:    #1a2040;
+  --accent:    #e74c3c;
+  --accent-dk: #c0392b;
+  --text:      #ffffff;
+  --muted:     #8899bb;
+  --dim:       #445566;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* { box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
+
+/* MapLibre resets */
+.maplibregl-canvas { display: block; }
+.maplibregl-ctrl-attrib { display: none !important; }
+.maplibregl-ctrl-zoom button {
+  background: rgba(10,14,30,.92) !important;
+  color: #aabbdd !important;
+  border-color: #2a3560 !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Tooltip */
+.story-tooltip {
+  background: rgba(6,10,22,.97);
+  border: 1px solid #2a3560;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 12px;
+  padding: 10px 13px;
+  width: 260px;
+  max-width: 260px;
+  white-space: normal;
+  word-break: break-word;
+  box-shadow: 0 4px 22px rgba(0,0,0,.8);
+  pointer-events: auto;
+}
+.tooltip-cat  { font-size: 8px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.tooltip-h    { font-size: 12px; font-weight: 600; line-height: 1.38; margin-bottom: 5px; }
+.tooltip-sum  { font-size: 10px; color: #b0bdd4; line-height: 1.5; margin-bottom: 7px; }
+.tooltip-meta { font-size: 9px; color: var(--dim); margin-bottom: 6px; }
+.tooltip-more { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: .5px; text-decoration: none; }
+.tooltip-more:hover { color: #ff6b6b; text-decoration: underline; }
+
+/* Pulse ring animation */
+@keyframes markerRing {
+  0%   { transform: translate(-50%,-50%) scale(1); opacity: .85; }
+  100% { transform: translate(-50%,-50%) scale(4); opacity: 0; }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Breaking flash */
+@keyframes flashDrop {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { transform: translateY(0);    opacity: 1; }
+  80%  { transform: translateY(0);    opacity: 1; }
+  100% { transform: translateY(-100%); opacity: 0; }
+}
+
+/* Bottom ticker scroll */
+@keyframes tickerScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
 }
