@@ -11,8 +11,9 @@ export default function StoryCard({ story, onFlyTo }: StoryCardProps) {
   const size  = DOT_RADII[story.importance]
 
   return (
-    <div
-      className="px-[11px] py-[9px] border-b border-[#111828] cursor-pointer hover:bg-[#111826]"
+    <button
+      type="button"
+      className="w-full text-left px-[11px] py-[9px] border-b border-[#111828] cursor-pointer hover:bg-[#111826]"
       onClick={() => onFlyTo(story.lat, story.lng)}
     >
       <div className="flex items-center gap-[6px] mb-[4px]">
@@ -21,6 +22,6 @@ export default function StoryCard({ story, onFlyTo }: StoryCardProps) {
       </div>
       <div className="text-[11px] font-semibold text-[#dde8ff] leading-[1.38] mb-[2px]">{story.headline}</div>
       <div className="text-[9px] text-[#445566]">{story.source} · {story.ago} ago</div>
-    </div>
+    </button>
   )
 }
