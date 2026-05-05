@@ -40,7 +40,7 @@ const COUNTRY_KEYWORDS: Array<[RegExp, string]> = [
   [/\bsouth africa\b|pretoria|johannesburg/i, 'ZA'],
   [/\bmexico\b|mexican/i, 'MX'],
   [/\bargentina\b|buenos aires/i, 'AR'],
-  [/\bkolombia\b|colombia\b|bogota/i, 'CO'],
+  [/\bcolombia\b|bogota/i, 'CO'],
   [/\bvenezuela\b|caracas/i, 'VE'],
   [/\bbangladesh\b|dhaka/i, 'BD'],
   [/\bindonesia\b|jakarta/i, 'ID'],
@@ -62,9 +62,8 @@ const COUNTRY_KEYWORDS: Array<[RegExp, string]> = [
   [/\bsweden\b|stockholm/i, 'SE'],
   [/\bnetherlands\b|amsterdam/i, 'NL'],
   [/\blebanon\b|beirut|hezbollah/i, 'LB'],
-  [/\bgeorgia\b|tbilisi/i, 'GE'],
+  [/\btbilisi\b/i, 'GE'],
   [/\bniger\b/i, 'NE'],
-  [/\bnigeria\b/i, 'NG'],
   [/\bmali\b/i, 'ML'],
   [/\bchile\b/i, 'CL'],
   [/\bperu\b/i, 'PE'],
@@ -87,7 +86,7 @@ const COUNTRY_KEYWORDS: Array<[RegExp, string]> = [
   [/\bhonduras\b/i, 'HN'],
   [/\bdr congo\b|democratic republic.*congo|drc\b|goma/i, 'CD'],
   [/\bcongo\b/i, 'CG'],
-  [/\blibia\b|libya\b|tripoli/i, 'LY'],
+  [/\bLibya\b|tripoli/i, 'LY'],
   [/\bmorocco\b|rabat/i, 'MA'],
   [/\btunisia\b|tunis/i, 'TN'],
   [/\balgeria\b|algiers/i, 'DZ'],
@@ -115,8 +114,8 @@ export function geolocate(article: NewsArticle): GeoResult | null {
       // Add small jitter so overlapping country stories don't stack exactly
       // Keep jitter small (±0.4) to stay within toBeCloseTo precision bounds
       return {
-        lat: centroid.lat + (Math.random() - 0.5) * 0.8,
-        lng: centroid.lng + (Math.random() - 0.5) * 0.8,
+        lat: Math.max(-90,  Math.min(90,  centroid.lat + (Math.random() - 0.5) * 0.8)),
+        lng: Math.max(-180, Math.min(180, centroid.lng + (Math.random() - 0.5) * 0.8)),
         countryCode: code,
       }
     }

@@ -25,5 +25,6 @@ export function scoreImportance(article: {
   const ageMs = Date.now() - new Date(article.publishedAt).getTime()
   if (ageMs < 2 * 3600_000) score += 1
 
+  // score accumulates max 5 (2+2+1), so clamp to [1,5] is always a valid Importance
   return Math.max(1, Math.min(5, score)) as Importance
 }
