@@ -41,8 +41,12 @@ async function fetchStories(): Promise<Story[]> {
 
   const articles: any[] = []
   for (const r of results) {
-    if (r.status === 'fulfilled' && r.value.articles) {
-      articles.push(...r.value.articles)
+    if (r.status === 'fulfilled') {
+      if (r.value.status === 'error') {
+        console.error('NewsAPI error:', r.value.code, r.value.message)
+      } else if (Array.isArray(r.value.articles)) {
+        articles.push(...r.value.articles)
+      }
     }
   }
 
@@ -50,7 +54,7 @@ async function fetchStories(): Promise<Story[]> {
   const stories: Story[] = []
 
   for (const a of articles) {
-    if (!a.title || !a.url) continue
+    if (!a.title || !a.url || !a.publishedAt) continue
     const id = createHash('md5').update(a.url).digest('hex').slice(0, 8)
     if (seen.has(id)) continue
     seen.add(id)
@@ -79,14 +83,27 @@ async function fetchStories(): Promise<Story[]> {
   return stories
 }
 
+let inflight: Promise<Story[]> | null = null
+
 export async function GET() {
   const cached = storyCache.get('stories')
   if (cached) return NextResponse.json(cached)
 
+  if (!inflight) {
+    inflight = fetchStories()
+      .then(stories => {
+        storyCache.set('stories', stories)
+        inflight = null
+        return stories
+      })
+      .catch(err => {
+        inflight = null
+        throw err
+      })
+  }
+
   try {
-    const stories = await fetchStories()
-    storyCache.set('stories', stories)
-    return NextResponse.json(stories)
+    return NextResponse.json(await inflight)
   } catch (err) {
     console.error('news fetch error:', err)
     return NextResponse.json({ error: 'Failed to fetch news' }, { status: 500 })
