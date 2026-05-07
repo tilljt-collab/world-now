@@ -51,7 +51,9 @@ export default function MapContainer({ stories, activeCategories, onFlyTo }: Map
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
 
+    let alive = true
     map.on('load', () => {
+      if (!alive) return
       map.addSource('countries', { type: 'geojson', data: '/world.geojson' })
       map.addLayer({
         id: 'countries-fill',
@@ -81,7 +83,7 @@ export default function MapContainer({ stories, activeCategories, onFlyTo }: Map
     })
 
     mapRef.current = map
-    return () => { map.remove(); mapRef.current = null }
+    return () => { alive = false; map.remove(); mapRef.current = null }
   }, [])
 
   // Re-render markers when stories or active categories change
@@ -97,12 +99,13 @@ export default function MapContainer({ stories, activeCategories, onFlyTo }: Map
     const filtered = stories.filter(s => activeCategories.has(s.category))
 
     filtered.forEach(s => {
-      const color = CATEGORY_COLORS[s.category]
+      const color = CATEGORY_COLORS[s.category] ?? '#888888'
       const rad   = DOT_RADII[s.importance]
       const tot   = rad * 2 + 28
       const speed = (1.5 + s.importance * 0.2).toFixed(1)
 
       const el = document.createElement('div')
+      el.dataset.minZoom = String(s.minZoom)
       el.style.cssText = `position:relative;width:${tot}px;height:${tot}px;cursor:pointer;opacity:${zoom >= s.minZoom ? '1' : '0'};pointer-events:${zoom >= s.minZoom ? 'auto' : 'none'};`
       el.innerHTML = `
         <div style="position:absolute;border-radius:50%;border:2px solid ${color};top:50%;left:50%;animation:markerRing ${speed}s ease-out infinite;opacity:0;width:${rad*2}px;height:${rad*2}px;transform:translate(-50%,-50%);"></div>
@@ -131,14 +134,12 @@ export default function MapContainer({ stories, activeCategories, onFlyTo }: Map
       markersRef.current.push(marker)
     })
 
-    const filteredSnap = filtered
     const onZoom = () => {
       const z = map.getZoom()
-      markersRef.current.forEach((m, i) => {
-        const story = filteredSnap[i]
-        if (!story) return
+      markersRef.current.forEach(m => {
         const el = m.getElement()
-        const show = z >= story.minZoom
+        const minZ = Number(el.dataset.minZoom ?? 0)
+        const show = z >= minZ
         el.style.opacity = show ? '1' : '0'
         el.style.pointerEvents = show ? 'auto' : 'none'
       })
