@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { Story, Category } from '@/lib/types'
@@ -27,6 +27,7 @@ export default function MapContainer({ stories, activeCategories, onFlyTo }: Map
   const mapRef       = useRef<maplibregl.Map | null>(null)
   const markersRef   = useRef<maplibregl.Marker[]>([])
   const popupRef     = useRef<maplibregl.Popup | null>(null)
+  const [mapZoom, setMapZoom] = useState(2)
 
   const flyTo = useCallback((lat: number, lng: number, zoom = 5) => {
     mapRef.current?.flyTo({ center: [lng, lat], zoom, duration: 1200 })
@@ -85,6 +86,7 @@ export default function MapContainer({ stories, activeCategories, onFlyTo }: Map
     })
 
     mapRef.current = map
+    map.on('zoomend', () => setMapZoom(map.getZoom()))
     return () => { alive = false; map.remove(); mapRef.current = null }
   }, [])
 
@@ -179,7 +181,7 @@ export default function MapContainer({ stories, activeCategories, onFlyTo }: Map
 
     map.on('zoom', onZoom)
     return () => { map.off('zoom', onZoom) }
-  }, [stories, activeCategories])
+  }, [stories, activeCategories, mapZoom])
 
   return <div ref={containerRef} className="absolute inset-0" />
 }

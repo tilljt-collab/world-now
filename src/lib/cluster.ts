@@ -23,6 +23,6 @@ export function clusterStories(stories: Story[], gridDeg = 8): Cluster[] {
     lng: group.reduce((sum, s) => sum + s.lng, 0) / group.length,
     count: group.length,
     stories: group,
-    topImportance: Math.max(...group.map(s => s.importance)),
+    topImportance: group.reduce((max, s) => s.importance > max ? s.importance : max, 1),
   }))
 }

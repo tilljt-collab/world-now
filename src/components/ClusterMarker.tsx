@@ -1,6 +1,4 @@
-import type { Cluster } from '@/lib/cluster'
-
-export function buildClusterEl(cluster: Pick<Cluster, 'count' | 'topImportance'>): HTMLElement {
+export function buildClusterEl(cluster: { count: number }): HTMLElement {
   const size = Math.min(20 + cluster.count * 2, 52)
   const el = document.createElement('div')
   el.style.cssText = `
