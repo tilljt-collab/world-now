@@ -4,6 +4,8 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { Story, Category } from '@/lib/types'
 import { CATEGORY_COLORS, DOT_RADII } from '@/lib/types'
+import { clusterStories } from '@/lib/cluster'
+import { buildClusterEl } from './ClusterMarker'
 
 interface MapContainerProps {
   stories: Story[]
@@ -98,6 +100,36 @@ export default function MapContainer({ stories, activeCategories, onFlyTo }: Map
     const zoom = map.getZoom()
     const filtered = stories.filter(s => activeCategories.has(s.category))
 
+    if (zoom <= 3) {
+      const clusterInput = filtered.filter(s => s.minZoom <= 2)
+      const clusters = clusterStories(clusterInput)
+      clusters.forEach(c => {
+        if (c.count <= 1) return
+        const el = buildClusterEl(c)
+        el.addEventListener('click', () => {
+          map.flyTo({ center: [c.lng, c.lat], zoom: 4, duration: 800 })
+        })
+        markersRef.current.push(
+          new maplibregl.Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(map)
+        )
+      })
+
+      const onZoom = () => {
+        const z = map.getZoom()
+        markersRef.current.forEach(m => {
+          const el = m.getElement()
+          const minZ = Number(el.dataset.minZoom ?? 0)
+          if (minZ === 0) return // cluster markers have no minZoom
+          const show = z >= minZ
+          el.style.opacity = show ? '1' : '0'
+          el.style.pointerEvents = show ? 'auto' : 'none'
+        })
+      }
+      map.on('zoom', onZoom)
+      return () => { map.off('zoom', onZoom) }
+    }
+
+    // zoom > 3: render individual markers
     filtered.forEach(s => {
       const color = CATEGORY_COLORS[s.category] ?? '#888888'
       const rad   = DOT_RADII[s.importance]
