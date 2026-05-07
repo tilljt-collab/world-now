@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import type { Category, Story } from '@/lib/types'
 import TopBar from './TopBar'
 import BottomBar from './BottomBar'
-import LeftPanel from './LeftPanel'
+import LeftPanel, { LIVE_STREAM_COUNT } from './LeftPanel'
 import RightPanel from './RightPanel'
 import CategoryFilter from './CategoryFilter'
 import BreakingFlash from './BreakingFlash'
@@ -22,11 +22,13 @@ export default function Shell() {
   const [flash,      setFlash]      = useState<{ headline: string; visible: boolean }>({ headline: '', visible: false })
   const flyToRef = useRef<((lat: number, lng: number, zoom?: number) => void) | null>(null)
   const prevIdsRef = useRef<Set<string>>(new Set())
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fetchStories = useCallback(async (isInitial = false) => {
     if (!isInitial) setRefreshing(true)
     try {
       const res  = await fetch('/api/news')
+      if (!res.ok) throw new Error(`/api/news returned ${res.status}`)
       const data: Story[] = await res.json()
       setStories(data)
 
@@ -34,8 +36,9 @@ export default function Shell() {
       if (!isInitial) {
         const incoming = data.filter(s => s.importance === 5 && !prevIdsRef.current.has(s.id))
         if (incoming.length > 0) {
+          if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
           setFlash({ headline: incoming[0].headline, visible: true })
-          setTimeout(() => setFlash(f => ({ ...f, visible: false })), 6500)
+          flashTimerRef.current = setTimeout(() => setFlash(f => ({ ...f, visible: false })), 6500)
         }
       }
 
@@ -48,7 +51,10 @@ export default function Shell() {
   useEffect(() => {
     fetchStories(true)
     const interval = setInterval(() => fetchStories(), POLL_MS)
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
+    }
   }, [fetchStories])
 
   const handleFlyTo = useCallback((lat: number, lng: number) => {
@@ -70,7 +76,7 @@ export default function Shell() {
       <TopBar
         storyCount={visible.length}
         breakingCount={stories.filter(s => s.importance === 5).length}
-        liveCount={4}
+        liveCount={LIVE_STREAM_COUNT}
         topHeadlines={topHeadlines}
       />
       <BreakingFlash headline={flash.headline} visible={flash.visible} />
@@ -79,7 +85,7 @@ export default function Shell() {
         <div className="flex-1 relative min-w-0">
           <MapContainer
             stories={stories}
-            activeCategories={activeCategories as Set<string>}
+            activeCategories={activeCategories}
             onFlyTo={handleMapFlyTo}
           />
           <CategoryFilter active={activeCategories} onChange={setActiveCategories} />

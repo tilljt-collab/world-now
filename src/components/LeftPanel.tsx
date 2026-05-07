@@ -10,6 +10,8 @@ const STREAMS = [
   { name: 'CNN International',  region: 'Americas / Global',    youtubeId: 'IFYVhkwHcls', live: false },
 ]
 
+export const LIVE_STREAM_COUNT = STREAMS.filter(s => s.live).length
+
 export default function LeftPanel() {
   const liveCount = STREAMS.filter(s => s.live).length
   return (

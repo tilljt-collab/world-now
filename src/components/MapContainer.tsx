@@ -2,12 +2,12 @@
 import { useEffect, useRef, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import type { Story } from '@/lib/types'
+import type { Story, Category } from '@/lib/types'
 import { CATEGORY_COLORS, DOT_RADII } from '@/lib/types'
 
 interface MapContainerProps {
   stories: Story[]
-  activeCategories: Set<string>
+  activeCategories: Set<Category>
   onFlyTo: (fn: (lat: number, lng: number, zoom?: number) => void) => void
 }
 
