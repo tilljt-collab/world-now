@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World News — Layout Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #080c18;
+    color: #fff;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    background: linear-gradient(90deg, #0e0e1e, #14142a);
+    border-bottom: 2px solid #c0392b;
+    padding: 0 16px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .topbar-logo {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  .topbar-logo span { color: #e74c3c; }
+  .live-badge {
+    background: #e74c3c;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+  .topbar-stats {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+  .stat {
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 20px;
+    font-weight: 800;
+    color: #e74c3c;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 9px;
+    color: #8899bb;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .topbar-ticker {
+    flex: 1;
+    margin: 0 24px;
+    overflow: hidden;
+    font-size: 11px;
+    color: #aabbdd;
+    letter-spacing: 0.5px;
+    border-left: 2px solid #e74c3c;
+    padding-left: 10px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .ticker-label {
+    color: #e74c3c;
+    font-weight: 700;
+    margin-right: 8px;
+  }
+
+  /* MAIN BODY */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* SIDE PANELS */
+  .side-panel {
+    width: 220px;
+    flex-shrink: 0;
+    background: #0b0f1f;
+    border-right: 1px solid #1a2040;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow-y: auto;
+    z-index: 5;
+  }
+  .side-panel.right {
+    border-right: none;
+    border-left: 1px solid #1a2040;
+  }
+  .panel-header {
+    padding: 8px 12px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #8899bb;
+    border-bottom: 1px solid #1a2040;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0d1225;
+  }
+  .stream-tile {
+    border-bottom: 1px solid #141830;
+    overflow: hidden;
+  }
+  .stream-tile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    background: #0f1428;
+    cursor: pointer;
+  }
+  .stream-tile-header:hover { background: #141a35; }
+  .stream-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #ccd8ff;
+  }
+  .stream-region {
+    font-size: 9px;
+    color: #556688;
+    margin-top: 1px;
+  }
+  .stream-live { color: #e74c3c; font-size: 9px; font-weight: 700; }
+  .stream-video {
+    background: #060a16;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border-top: 1px solid #1a2040;
+  }
+  .stream-video-inner {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0a1020 0%, #0d1830 50%, #0a0c18 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .play-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(231,76,60,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #e74c3c;
+    font-size: 10px;
+  }
+  .stream-label { font-size: 9px; color: #445; letter-spacing: 1px; }
+  .stream-collapsed { display: none; }
+  .minimise-btn {
+    background: none;
+    border: none;
+    color: #445;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 2px;
+  }
+
+  /* MAP AREA */
+  .map-area {
+    flex: 1;
+    position: relative;
+    background: #060b18;
+    overflow: hidden;
+  }
+
+  /* Simulated dark map */
+  .map-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 25% 45%, rgba(0,40,120,0.25) 0%, transparent 45%),
+      radial-gradient(ellipse at 75% 35%, rgba(0,30,100,0.2) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 70%, rgba(0,20,60,0.3) 0%, transparent 50%),
+      #060b18;
+  }
+
+  /* SVG world outline (simplified) */
+  .map-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.18;
+  }
+
+  /* News hotspot markers */
+  .hotspot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+  }
+  .hotspot-ring {
+    border-radius: 50%;
+    border: 2px solid;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    animation: ripple 2s infinite;
+    opacity: 0;
+  }
+  @keyframes ripple {
+    0% { width: 10px; height: 10px; opacity: 0.8; }
+    100% { width: 40px; height: 40px; opacity: 0; }
+  }
+  .hotspot-dot {
+    border-radius: 50%;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 0 12px currentColor;
+  }
+  .hotspot.critical .hotspot-dot { width: 14px; height: 14px; background: #e74c3c; color: #e74c3c; }
+  .hotspot.critical .hotspot-ring { border-color: #e74c3c; animation-delay: 0s; }
+  .hotspot.high .hotspot-dot { width: 11px; height: 11px; background: #e67e22; color: #e67e22; }
+  .hotspot.high .hotspot-ring { border-color: #e67e22; animation-delay: 0.3s; }
+  .hotspot.medium .hotspot-dot { width: 8px; height: 8px; background: #2980b9; color: #2980b9; }
+  .hotspot.medium .hotspot-ring { border-color: #2980b9; animation-delay: 0.6s; }
+
+  /* Hover tooltip */
+  .map-tooltip {
+    position: absolute;
+    background: rgba(8,12,28,0.97);
+    border: 1px solid #2a3560;
+    border-left: 3px solid #e74c3c;
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 11px;
+    max-width: 200px;
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+    top: 38%; left: 54%;
+    z-index: 20;
+  }
+  .tooltip-region { font-size: 9px; color: #8899bb; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+  .tooltip-headline { font-size: 12px; font-weight: 600; color: #fff; line-height: 1.3; margin-bottom: 6px; }
+  .tooltip-meta { font-size: 9px; color: #556; }
+  .tooltip-video-thumb {
+    width: 100%;
+    height: 60px;
+    background: linear-gradient(135deg, #0a1428, #0d1a30);
+    border-radius: 3px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #1e2a50;
+    font-size: 9px;
+    color: #445;
+    gap: 6px;
+  }
+
+  /* Zoom controls */
+  .zoom-controls {
+    position: absolute;
+    bottom: 24px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 10;
+  }
+  .zoom-btn {
+    width: 32px; height: 32px;
+    background: rgba(10,14,30,0.9);
+    border: 1px solid #2a3560;
+    color: #aabbdd;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Region label */
+  .region-label {
+    position: absolute;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(100,130,200,0.4);
+    pointer-events: none;
+  }
+
+  /* Bottom ticker */
+  .bottom-bar {
+    height: 30px;
+    background: #e74c3c;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .bottom-tag {
+    background: #c0392b;
+    height: 100%;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+  .bottom-ticker-text {
+    font-size: 11px;
+    padding: 0 20px;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+  }
+
+  /* Continent labels */
+  .clabel { position: absolute; font-size: 9px; letter-spacing: 2px; color: rgba(100,130,190,0.3); text-transform: uppercase; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="topbar-logo">WORLD<span>NOW</span></div>
+    <div class="live-badge">● LIVE</div>
+  </div>
+  <div class="topbar-ticker">
+    <span class="ticker-label">BREAKING</span>
+    Gaza ceasefire talks collapse as fighting intensifies in southern Rafah &nbsp;·&nbsp; India election: Modi projected to win third term with reduced majority &nbsp;·&nbsp; ECB signals rate cut amid eurozone slowdown
+  </div>
+  <div class="topbar-stats">
+    <div class="stat"><div class="stat-num">47</div><div class="stat-label">Stories</div></div>
+    <div class="stat"><div class="stat-num" style="color:#e67e22;">12</div><div class="stat-label">Breaking</div></div>
+    <div class="stat"><div class="stat-num" style="color:#2ecc71;">5</div><div class="stat-label">Live</div></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT PANEL — Livestreams -->
+  <div class="side-panel">
+    <div class="panel-header">
+      <span>Live Streams</span>
+      <span style="color:#e74c3c;">● 3 Live</span>
+    </div>
+
+    <div class="stream-tile">
+      <div class="stream-tile-header">
+        <div>
+          <div class="stream-name">Al Jazeera English</div>
+          <div class="stream-region">Middle East / Global</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span class="stream-live">● LIVE</span>
+          <button class="minimise-btn">▲</button>
+        </div>
+      </div>
+      <div class="stream-video">
+        <div class="stream-video-inner">
+          <div class="play-icon">▶</div>
+          <div class="stream-label">YOUTUBE EMBED</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stream-tile">
+      <div class="stream-tile-header">
+        <div>
+          <div class="stream-name">BBC World News</div>
+          <div class="stream-region">Global</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span class="stream-live">● LIVE</span>
+          <button class="minimise-btn">▲</button>
+        </div>
+      </div>
+      <div class="stream-video">
+        <div class="stream-video-inner">
+          <div class="play-icon">▶</div>
+          <div class="stream-label">YOUTUBE EMBED</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stream-tile">
+      <div class="stream-tile-header" style="opacity:0.6;">
+        <div>
+          <div class="stream-name">France 24</div>
+          <div class="stream-region">Europe / Africa</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span style="color:#445;font-size:9px;">MINIMISED</span>
+          <button class="minimise-btn">▼</button>
+        </div>
+      </div>
+      <!-- collapsed -->
+    </div>
+
+    <div class="stream-tile">
+      <div class="stream-tile-header">
+        <div>
+          <div class="stream-name">DW News</div>
+          <div class="stream-region">Europe</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span class="stream-live">● LIVE</span>
+          <button class="minimise-btn">▲</button>
+        </div>
+      </div>
+      <div class="stream-video">
+        <div class="stream-video-inner">
+          <div class="play-icon">▶</div>
+          <div class="stream-label">YOUTUBE EMBED</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-area">
+    <div class="map-bg"></div>
+
+    <!-- Grid lines (longitude/latitude feel) -->
+    <svg class="map-svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+      <!-- latitude lines -->
+      <line x1="0" y1="100" x2="800" y2="100" stroke="#1a2a50" stroke-width="0.5"/>
+      <line x1="0" y1="200" x2="800" y2="200" stroke="#1a2a50" stroke-width="0.5"/>
+      <line x1="0" y1="250" x2="800" y2="250" stroke="#2a3a70" stroke-width="0.8"/>
+      <line x1="0" y1="300" x2="800" y2="300" stroke="#1a2a50" stroke-width="0.5"/>
+      <line x1="0" y1="400" x2="800" y2="400" stroke="#1a2a50" stroke-width="0.5"/>
+      <!-- longitude lines -->
+      <line x1="100" y1="0" x2="100" y2="500" stroke="#1a2a50" stroke-width="0.5"/>
+      <line x1="200" y1="0" x2="200" y2="500" stroke="#1a2a50" stroke-width="0.5"/>
+      <line x1="400" y1="0" x2="400" y2="500" stroke="#2a3a70" stroke-width="0.8"/>
+      <line x1="600" y1="0" x2="600" y2="500" stroke="#1a2a50" stroke-width="0.5"/>
+      <line x1="700" y1="0" x2="700" y2="500" stroke="#1a2a50" stroke-width="0.5"/>
+
+      <!-- Rough continent silhouettes (very simplified) -->
+      <!-- North America -->
+      <path d="M80,80 L180,70 L200,130 L190,200 L160,230 L130,210 L100,180 L70,140 Z" fill="#1a2a4a" stroke="#253560" stroke-width="0.8" opacity="0.7"/>
+      <!-- South America -->
+      <path d="M160,260 L200,250 L220,310 L210,390 L185,420 L160,380 L145,310 Z" fill="#1a2a4a" stroke="#253560" stroke-width="0.8" opacity="0.7"/>
+      <!-- Europe -->
+      <path d="M340,80 L410,75 L420,120 L400,140 L370,130 L350,110 Z" fill="#1a2a4a" stroke="#253560" stroke-width="0.8" opacity="0.7"/>
+      <!-- Africa -->
+      <path d="M350,150 L420,140 L440,200 L430,310 L400,360 L370,340 L345,270 L340,200 Z" fill="#1a2a4a" stroke="#253560" stroke-width="0.8" opacity="0.7"/>
+      <!-- Middle East -->
+      <path d="M430,140 L480,130 L490,180 L460,200 L430,185 Z" fill="#1a2a4a" stroke="#253560" stroke-width="0.8" opacity="0.7"/>
+      <!-- Russia/Asia -->
+      <path d="M430,60 L650,50 L660,150 L580,180 L480,160 L440,130 Z" fill="#1a2a4a" stroke="#253560" stroke-width="0.8" opacity="0.7"/>
+      <!-- India -->
+      <path d="M510,170 L545,165 L550,230 L525,260 L505,220 Z" fill="#1a2a4a" stroke="#253560" stroke-width="0.8" opacity="0.7"/>
+      <!-- SE Asia / China -->
+      <path d="M580,140 L650,130 L670,200 L640,220 L590,190 Z" fill="#1a2a4a" stroke="#253560" stroke-width="0.8" opacity="0.7"/>
+      <!-- Australia -->
+      <path d="M620,300 L700,290 L710,360 L660,380 L620,350 Z" fill="#1a2a4a" stroke="#253560" stroke-width="0.8" opacity="0.7"/>
+    </svg>
+
+    <!-- Continent labels -->
+    <div class="clabel" style="top:28%;left:10%;">North America</div>
+    <div class="clabel" style="top:55%;left:17%;">South America</div>
+    <div class="clabel" style="top:22%;left:41%;">Europe</div>
+    <div class="clabel" style="top:38%;left:42%;">Africa</div>
+    <div class="clabel" style="top:18%;left:60%;">Asia</div>
+    <div class="clabel" style="top:62%;left:68%;">Australia</div>
+
+    <!-- NEWS HOTSPOTS -->
+    <!-- Gaza (Middle East) - Critical -->
+    <div class="hotspot critical" style="top:37%;left:55%;">
+      <div class="hotspot-ring"></div>
+      <div class="hotspot-dot"></div>
+    </div>
+    <!-- Ukraine - Critical -->
+    <div class="hotspot critical" style="top:26%;left:48%;">
+      <div class="hotspot-ring" style="animation-delay:0.4s"></div>
+      <div class="hotspot-dot"></div>
+    </div>
+    <!-- India - High -->
+    <div class="hotspot high" style="top:44%;left:62%;">
+      <div class="hotspot-ring"></div>
+      <div class="hotspot-dot"></div>
+    </div>
+    <!-- US - High -->
+    <div class="hotspot high" style="top:32%;left:17%;">
+      <div class="hotspot-ring"></div>
+      <div class="hotspot-dot"></div>
+    </div>
+    <!-- Taiwan - Medium -->
+    <div class="hotspot medium" style="top:38%;left:73%;">
+      <div class="hotspot-ring"></div>
+      <div class="hotspot-dot"></div>
+    </div>
+    <!-- UK - Medium -->
+    <div class="hotspot medium" style="top:24%;left:40%;">
+      <div class="hotspot-ring"></div>
+      <div class="hotspot-dot"></div>
+    </div>
+    <!-- Brazil - Medium -->
+    <div class="hotspot medium" style="top:57%;left:25%;">
+      <div class="hotspot-ring"></div>
+      <div class="hotspot-dot"></div>
+    </div>
+
+    <!-- HOVER TOOLTIP (shown as if hovering Gaza) -->
+    <div class="map-tooltip">
+      <div class="tooltip-region">🔴 Middle East · Critical</div>
+      <div class="tooltip-headline">Gaza ceasefire talks collapse as fighting intensifies</div>
+      <div class="tooltip-meta">Reuters · 4 min ago · 847 sources</div>
+      <div class="tooltip-video-thumb">
+        <span>▶</span>
+        <span>Latest clip · Al Jazeera</span>
+      </div>
+    </div>
+
+    <!-- Zoom controls -->
+    <div class="zoom-controls">
+      <div class="zoom-btn">+</div>
+      <div class="zoom-btn">−</div>
+    </div>
+
+    <!-- Legend -->
+    <div style="position:absolute;bottom:16px;left:12px;display:flex;flex-direction:column;gap:5px;">
+      <div style="font-size:8px;letter-spacing:1px;color:#445;text-transform:uppercase;margin-bottom:2px;">Story Severity</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:9px;color:#aaa;">
+        <div style="width:10px;height:10px;border-radius:50%;background:#e74c3c;box-shadow:0 0 6px #e74c3c;"></div> Critical
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:9px;color:#aaa;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#e67e22;box-shadow:0 0 6px #e67e22;"></div> Major
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:9px;color:#aaa;">
+        <div style="width:7px;height:7px;border-radius:50%;background:#2980b9;box-shadow:0 0 6px #2980b9;"></div> Developing
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL — Top stories / region feed -->
+  <div class="side-panel right">
+    <div class="panel-header">
+      <span>Top Stories</span>
+      <span style="color:#2ecc71;font-size:9px;">↻ Live</span>
+    </div>
+
+    <!-- Story cards -->
+    <div style="display:flex;flex-direction:column;gap:0;">
+
+      <div style="padding:10px 12px;border-bottom:1px solid #141830;cursor:pointer;" onmouseenter="this.style.background='#111826'" onmouseleave="this.style.background='transparent'">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+          <div style="width:7px;height:7px;border-radius:50%;background:#e74c3c;box-shadow:0 0 5px #e74c3c;flex-shrink:0;"></div>
+          <span style="font-size:9px;color:#e74c3c;letter-spacing:1px;text-transform:uppercase;">Breaking · Middle East</span>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#dde8ff;line-height:1.4;margin-bottom:3px;">Gaza ceasefire talks collapse as fighting intensifies</div>
+        <div style="font-size:9px;color:#445;">Reuters · 4 min ago</div>
+      </div>
+
+      <div style="padding:10px 12px;border-bottom:1px solid #141830;cursor:pointer;" onmouseenter="this.style.background='#111826'" onmouseleave="this.style.background='transparent'">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+          <div style="width:7px;height:7px;border-radius:50%;background:#e74c3c;box-shadow:0 0 5px #e74c3c;flex-shrink:0;"></div>
+          <span style="font-size:9px;color:#e74c3c;letter-spacing:1px;text-transform:uppercase;">Breaking · Europe</span>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#dde8ff;line-height:1.4;margin-bottom:3px;">Ukraine frontline shifts as Russia advances in Kharkiv region</div>
+        <div style="font-size:9px;color:#445;">BBC · 11 min ago</div>
+      </div>
+
+      <div style="padding:10px 12px;border-bottom:1px solid #141830;cursor:pointer;" onmouseenter="this.style.background='#111826'" onmouseleave="this.style.background='transparent'">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+          <div style="width:7px;height:7px;border-radius:50%;background:#e67e22;box-shadow:0 0 5px #e67e22;flex-shrink:0;"></div>
+          <span style="font-size:9px;color:#e67e22;letter-spacing:1px;text-transform:uppercase;">Major · Asia</span>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#dde8ff;line-height:1.4;margin-bottom:3px;">India election: Modi projected to win third term with reduced majority</div>
+        <div style="font-size:9px;color:#445;">AP · 22 min ago</div>
+      </div>
+
+      <div style="padding:10px 12px;border-bottom:1px solid #141830;cursor:pointer;" onmouseenter="this.style.background='#111826'" onmouseleave="this.style.background='transparent'">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+          <div style="width:7px;height:7px;border-radius:50%;background:#e67e22;box-shadow:0 0 5px #e67e22;flex-shrink:0;"></div>
+          <span style="font-size:9px;color:#e67e22;letter-spacing:1px;text-transform:uppercase;">Major · Americas</span>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#dde8ff;line-height:1.4;margin-bottom:3px;">US Senate passes foreign aid package; $61B to Ukraine approved</div>
+        <div style="font-size:9px;color:#445;">CNN · 35 min ago</div>
+      </div>
+
+      <div style="padding:10px 12px;border-bottom:1px solid #141830;cursor:pointer;" onmouseenter="this.style.background='#111826'" onmouseleave="this.style.background='transparent'">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+          <div style="width:7px;height:7px;border-radius:50%;background:#2980b9;box-shadow:0 0 5px #2980b9;flex-shrink:0;"></div>
+          <span style="font-size:9px;color:#2980b9;letter-spacing:1px;text-transform:uppercase;">Developing · Europe</span>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#dde8ff;line-height:1.4;margin-bottom:3px;">ECB signals rate cut as eurozone growth stalls for second quarter</div>
+        <div style="font-size:9px;color:#445;">FT · 1 hr ago</div>
+      </div>
+
+      <div style="padding:10px 12px;border-bottom:1px solid #141830;cursor:pointer;" onmouseenter="this.style.background='#111826'" onmouseleave="this.style.background='transparent'">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+          <div style="width:7px;height:7px;border-radius:50%;background:#2980b9;box-shadow:0 0 5px #2980b9;flex-shrink:0;"></div>
+          <span style="font-size:9px;color:#2980b9;letter-spacing:1px;text-transform:uppercase;">Developing · Asia-Pacific</span>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#dde8ff;line-height:1.4;margin-bottom:3px;">China increases military drills near Taiwan Strait amid tensions</div>
+        <div style="font-size:9px;color:#445;">Reuters · 2 hr ago</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM TICKER -->
+<div class="bottom-bar">
+  <div class="bottom-tag">BREAKING</div>
+  <div class="bottom-ticker-text">
+    Gaza ceasefire talks collapse · India election results: Modi projected to win · ECB signals rate cut · Ukraine frontline shifts near Kharkiv · China military drills near Taiwan Strait · Brazil flooding displaces 200,000
+  </div>
+</div>
+
+</body>
+</html>

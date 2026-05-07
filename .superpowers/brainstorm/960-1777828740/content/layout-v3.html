@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WorldNow — v3</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: #060b18; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+/* ── LAYOUT ─────────────────────────────────────────── */
+.shell   { display:flex; flex-direction:column; height:100vh; }
+.topbar  { flex:0 0 50px; display:flex; align-items:center; gap:14px;
+           padding:0 16px; background:#0d0d1e; border-bottom:2px solid #c0392b; z-index:1000; }
+.main    { flex:1; display:flex; overflow:hidden; min-height:0; }
+.bottombar { flex:0 0 28px; background:#c0392b; display:flex; align-items:center; overflow:hidden; z-index:1000; }
+
+/* ── TOP BAR ────────────────────────────────────────── */
+.logo      { font-size:17px; font-weight:900; letter-spacing:3px; white-space:nowrap; }
+.logo em   { color:#e74c3c; font-style:normal; }
+.live-pill { background:#e74c3c; font-size:9px; font-weight:800; padding:2px 7px;
+             border-radius:3px; letter-spacing:1px; animation:blink 1.4s infinite; white-space:nowrap; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.55} }
+.top-ticker { flex:1; font-size:11px; color:#99b; border-left:2px solid #e74c3c;
+              padding-left:10px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.top-ticker b { color:#e74c3c; }
+.stats      { display:flex; gap:18px; }
+.stat-n     { font-size:19px; font-weight:800; line-height:1; }
+.stat-l     { font-size:8px; color:#8899bb; letter-spacing:1px; text-transform:uppercase; }
+
+/* ── PANELS ─────────────────────────────────────────── */
+.panel { width:210px; flex-shrink:0; background:#0b0f1f; display:flex;
+         flex-direction:column; overflow-y:auto; border-right:1px solid #1a2040; }
+.panel.right { border-right:none; border-left:1px solid #1a2040; }
+.panel-hdr { position:sticky; top:0; z-index:2; padding:7px 11px;
+             font-size:8px; letter-spacing:2px; text-transform:uppercase; color:#8899bb;
+             background:#0d1225; border-bottom:1px solid #1a2040;
+             display:flex; justify-content:space-between; align-items:center; }
+
+/* stream tiles */
+.stile       { border-bottom:1px solid #111828; }
+.stile-hdr   { display:flex; justify-content:space-between; align-items:center;
+               padding:7px 10px; cursor:pointer; background:#0f1428; user-select:none; }
+.stile-hdr:hover { background:#141a35; }
+.stile-name  { font-size:11px; font-weight:600; color:#ccd8ff; }
+.stile-sub   { font-size:9px; color:#556688; }
+.stile-live  { color:#e74c3c; font-size:9px; font-weight:700; }
+.stile-body  { overflow:hidden; transition:max-height .25s ease; max-height:120px; }
+.stile-body.closed { max-height:0; }
+.stile-thumb { height:108px; background:linear-gradient(135deg,#08101e,#0c1830);
+               display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+               border-top:1px solid #1a2040; }
+.play-btn    { width:28px; height:28px; border-radius:50%; border:2px solid rgba(231,76,60,.55);
+               display:flex; align-items:center; justify-content:center; color:#e74c3c; font-size:10px; }
+.stile-lbl   { font-size:8px; color:#334; letter-spacing:1px; }
+.min-btn     { background:none; border:none; color:#556; cursor:pointer; font-size:10px; padding:2px 4px; }
+.min-btn:hover { color:#aab; }
+
+/* story cards */
+.scard       { padding:9px 11px; border-bottom:1px solid #111828; cursor:pointer; }
+.scard:hover { background:#111826; }
+.scard-top   { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+.scard-dot   { border-radius:50%; flex-shrink:0; }
+.scard-cat   { font-size:8px; letter-spacing:1px; text-transform:uppercase; }
+.scard-h     { font-size:11px; font-weight:600; color:#dde8ff; line-height:1.38; margin-bottom:2px; }
+.scard-m     { font-size:9px; color:#445; }
+
+/* category legend */
+.legend { padding:10px 11px; display:flex; flex-direction:column; gap:5px;
+          border-top:1px solid #1a2040; margin-top:auto; }
+.legend-row { display:flex; align-items:center; gap:7px; font-size:9px; color:#8899bb; }
+.legend-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+/* ── MAP ────────────────────────────────────────────── */
+.map-wrap { flex:1; position:relative; min-width:0; }
+#map      { position:absolute; inset:0; }
+.leaflet-container { background:#060b18 !important; }
+.leaflet-control-zoom a { background:rgba(10,14,30,.92)!important; color:#aabbdd!important; border-color:#2a3560!important; }
+.leaflet-control-zoom a:hover { background:#141a35!important; color:#fff!important; }
+.leaflet-control-attribution { display:none; }
+
+/* custom tooltip */
+.nt { background:rgba(6,10,22,.97)!important; border:1px solid #2a3560!important;
+      border-left:3px solid #e74c3c!important; border-radius:4px!important; color:#fff!important;
+      padding:10px 13px!important; font-family:'Segoe UI',system-ui,sans-serif!important;
+      font-size:12px!important; max-width:230px!important; box-shadow:0 4px 22px rgba(0,0,0,.8)!important; }
+.nt::before { display:none!important; }
+.nt-cat  { font-size:8px; color:#8899bb; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+.nt-h    { font-size:12px; font-weight:600; color:#fff; line-height:1.35; margin-bottom:5px; }
+.nt-m    { font-size:9px; color:#556; margin-bottom:8px; }
+.nt-vid  { background:linear-gradient(135deg,#0a1428,#0d1a30); border:1px solid #1e2a50;
+           border-radius:3px; padding:7px 10px; display:flex; align-items:center; gap:7px; font-size:9px; color:#446; }
+
+/* zoom hint */
+.zoom-hint { position:absolute; bottom:56px; left:50%; transform:translateX(-50%);
+             background:rgba(6,10,22,.88); border:1px solid #2a3560; padding:5px 13px;
+             border-radius:20px; font-size:10px; color:#8899bb; letter-spacing:1px;
+             z-index:900; pointer-events:none; transition:opacity .4s; }
+
+/* ── TICKER ─────────────────────────────────────────── */
+.btag   { background:#a02020; height:100%; padding:0 12px; display:flex; align-items:center;
+          font-size:9px; font-weight:800; letter-spacing:2px; white-space:nowrap; flex-shrink:0; }
+.btrack { flex:1; overflow:hidden; }
+.btext  { display:inline-block; white-space:nowrap; font-size:11px;
+          animation:scroll 40s linear infinite; padding-left:100%; }
+@keyframes scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }
+
+/* pulsing ring on markers */
+@keyframes mring { 0%{transform:translate(-50%,-50%) scale(1);opacity:.8} 100%{transform:translate(-50%,-50%) scale(3.5);opacity:0} }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOP -->
+<div class="topbar">
+  <div class="logo">WORLD<em>NOW</em></div>
+  <div class="live-pill">● LIVE</div>
+  <div class="top-ticker"><b>BREAKING</b> &nbsp;Gaza ceasefire talks collapse · Ukraine offensive repelled near Kharkiv · Modi projected to win India election · ECB signals June rate cut</div>
+  <div class="stats">
+    <div><div class="stat-n" id="visCount" style="color:#e74c3c;">47</div><div class="stat-l">Stories</div></div>
+    <div><div class="stat-n" style="color:#e67e22;">12</div><div class="stat-l">Breaking</div></div>
+    <div><div class="stat-n" style="color:#2ecc71;">5</div><div class="stat-l">Live</div></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT PANEL -->
+  <div class="panel">
+    <div class="panel-hdr"><span>Live Streams</span><span style="color:#e74c3c;">● 4 Live</span></div>
+    <div id="streams"></div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div style="font-size:8px;letter-spacing:1px;color:#445;text-transform:uppercase;margin-bottom:2px;">Category</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#e74c3c;box-shadow:0 0 5px #e74c3c;"></div>Conflict / War</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#e67e22;box-shadow:0 0 5px #e67e22;"></div>Politics / Elections</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#f1c40f;box-shadow:0 0 5px #f1c40f;"></div>Economy / Finance</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#2ecc71;box-shadow:0 0 5px #2ecc71;"></div>Climate / Environment</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#9b59b6;box-shadow:0 0 5px #9b59b6;"></div>Disaster / Emergency</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#2980b9;box-shadow:0 0 5px #2980b9;"></div>Diplomacy / Global</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#1abc9c;box-shadow:0 0 5px #1abc9c;"></div>Society / Culture</div>
+      <div style="font-size:8px;letter-spacing:1px;color:#445;text-transform:uppercase;margin-top:6px;margin-bottom:2px;">Dot size = Importance</div>
+      <div class="legend-row" style="gap:4px;">
+        <div style="width:6px;height:6px;border-radius:50%;background:#aaa;flex-shrink:0;"></div>
+        <div style="width:9px;height:9px;border-radius:50%;background:#aaa;flex-shrink:0;"></div>
+        <div style="width:13px;height:13px;border-radius:50%;background:#aaa;flex-shrink:0;"></div>
+        <div style="width:17px;height:17px;border-radius:50%;background:#aaa;flex-shrink:0;"></div>
+        <div style="width:21px;height:21px;border-radius:50%;background:#aaa;flex-shrink:0;"></div>
+        <span style="margin-left:4px;">Minor → Major</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="zoom-hint" id="hint">🔍 Zoom in to reveal regional &amp; local stories</div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel right">
+    <div class="panel-hdr"><span>Top Stories</span><span style="color:#2ecc71;font-size:9px;" id="rlbl">↻ Live</span></div>
+    <div id="feed"></div>
+  </div>
+
+</div>
+
+<!-- BOTTOM -->
+<div class="bottombar">
+  <div class="btag">BREAKING</div>
+  <div class="btrack"><span class="btext">
+    Gaza ceasefire talks collapse as fighting intensifies in Rafah &nbsp;·&nbsp;
+    India election: Modi projected to win third term with reduced majority &nbsp;·&nbsp;
+    ECB signals rate cut as eurozone growth stalls for second quarter &nbsp;·&nbsp;
+    Ukraine frontline: Russia advances near Kharkiv, Kyiv under drone attack &nbsp;·&nbsp;
+    China military drills near Taiwan Strait escalate &nbsp;·&nbsp;
+    Brazil flooding displaces 200,000 in Rio Grande do Sul &nbsp;·&nbsp;
+    South Africa elections: ANC loses majority for first time since 1994 &nbsp;·&nbsp;
+    Los Angeles wildfire near Griffith Park: 1,200 evacuated &nbsp;·&nbsp;
+    Argentina peso hits record low as Milei austerity continues &nbsp;·&nbsp;
+    Niger junta seizes French uranium facilities, expels ambassador
+  </span></div>
+</div>
+
+</div><!-- .shell -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── CATEGORIES ─────────────────────────────────────────
+const CAT = {
+  conflict:    { color:'#e74c3c', label:'Conflict / War'        },
+  politics:    { color:'#e67e22', label:'Politics / Elections'  },
+  economy:     { color:'#f1c40f', label:'Economy / Finance'     },
+  climate:     { color:'#2ecc71', label:'Climate / Environment' },
+  disaster:    { color:'#9b59b6', label:'Disaster / Emergency'  },
+  diplomacy:   { color:'#2980b9', label:'Diplomacy / Global'    },
+  society:     { color:'#1abc9c', label:'Society / Culture'     },
+};
+
+// importance 1-5 → pixel radius
+function radius(imp) { return [6,9,13,17,21][imp-1]; }
+
+// ── STORIES ────────────────────────────────────────────
+// zoom: min zoom level to show; importance: 1-5
+const STORIES = [
+  // ── GLOBAL (zoom 2) ──────────────────────────────────
+  { lat:31.5,  lng:34.8,   cat:'conflict',  imp:5, zoom:2, headline:'Gaza ceasefire talks collapse as fighting intensifies in Rafah',              source:'Reuters',  ago:'4m'  },
+  { lat:49.8,  lng:36.2,   cat:'conflict',  imp:5, zoom:2, headline:'Ukraine: Russia advances in Kharkiv region; Kyiv hit by drone barrage',      source:'BBC',      ago:'9m'  },
+  { lat:20.6,  lng:78.9,   cat:'politics',  imp:4, zoom:2, headline:'India election: Modi projected to win third term with reduced majority',      source:'AP',       ago:'22m' },
+  { lat:38.9,  lng:-77.0,  cat:'politics',  imp:4, zoom:2, headline:'US Senate approves $61B foreign aid package for Ukraine and Taiwan',         source:'CNN',      ago:'35m' },
+  { lat:25.0,  lng:121.5,  cat:'conflict',  imp:4, zoom:2, headline:'China escalates military drills near Taiwan Strait amid tensions',            source:'Reuters',  ago:'2h'  },
+  { lat:35.7,  lng:51.4,   cat:'diplomacy', imp:4, zoom:2, headline:'Iran nuclear talks stall; IAEA warns of uranium enrichment escalation',      source:'FT',       ago:'45m' },
+  { lat:1.3,   lng:103.8,  cat:'diplomacy', imp:3, zoom:2, headline:'ASEAN summit opens in Singapore amid South China Sea sovereignty disputes',  source:'Reuters',  ago:'5h'  },
+  { lat:-23.5, lng:-46.6,  cat:'disaster',  imp:4, zoom:2, headline:'Brazil flooding displaces 200,000 in Rio Grande do Sul; death toll rises',   source:'AP',       ago:'3h'  },
+  { lat:-30.5, lng:22.9,   cat:'politics',  imp:4, zoom:2, headline:'South Africa elections: ANC loses majority for first time since 1994',       source:'Reuters',  ago:'2h'  },
+  { lat:15.5,  lng:32.5,   cat:'conflict',  imp:3, zoom:2, headline:'Sudan: RSF advances on Khartoum North as humanitarian crisis deepens',       source:'Al Jazeera',ago:'6h' },
+  { lat:51.5,  lng:-0.1,   cat:'politics',  imp:3, zoom:2, headline:'UK election campaign: polls tighten ahead of July vote; Tory split widens',  source:'Guardian', ago:'1h'  },
+  { lat:48.2,  lng:16.4,   cat:'economy',   imp:3, zoom:2, headline:'ECB signals June rate cut as eurozone growth stalls for second quarter',     source:'FT',       ago:'3h'  },
+  { lat:35.0,  lng:36.0,   cat:'conflict',  imp:3, zoom:2, headline:'Syria: Israeli airstrikes hit Iranian-linked sites near Palmyra',            source:'Reuters',  ago:'8h'  },
+  { lat:15.3,  lng:38.9,   cat:'conflict',  imp:3, zoom:2, headline:'Ethiopia–Eritrea border tensions resurface as troop build-ups reported',     source:'AFP',      ago:'12h' },
+  { lat:33.6,  lng:73.0,   cat:'conflict',  imp:3, zoom:2, headline:'Pakistan: militant attack kills 14 soldiers in North Waziristan',            source:'Dawn',     ago:'4h'  },
+
+  // ── REGIONAL (zoom 4) ────────────────────────────────
+  { lat:48.8,  lng:2.3,    cat:'politics',  imp:3, zoom:4, headline:'Paris protests: thousands march against pension reform extension',           source:'Le Monde', ago:'2h'  },
+  { lat:52.5,  lng:13.4,   cat:'politics',  imp:3, zoom:4, headline:'Germany coalition crisis: FDP threatens to walk out over budget deficit',    source:'DW',       ago:'3h'  },
+  { lat:40.4,  lng:-3.7,   cat:'politics',  imp:2, zoom:4, headline:'Spain snap regional elections: three autonomous communities vote today',     source:'El País',  ago:'4h'  },
+  { lat:41.0,  lng:29.0,   cat:'politics',  imp:3, zoom:4, headline:'Istanbul mayoral election: opposition leads as count nears completion',      source:'Hurriyet', ago:'1h'  },
+  { lat:30.0,  lng:31.2,   cat:'economy',   imp:3, zoom:4, headline:'Egypt secures $8B IMF deal amid currency crisis and subsidy cuts',           source:'Reuters',  ago:'6h'  },
+  { lat:37.6,  lng:126.9,  cat:'politics',  imp:3, zoom:4, headline:'South Korea president under snap election pressure after corruption scandal',source:'Yonhap',   ago:'8h'  },
+  { lat:13.5,  lng:2.1,    cat:'politics',  imp:3, zoom:4, headline:'Niger junta expels French ambassador, seizes uranium facilities',            source:'AFP',      ago:'12h' },
+  { lat:19.4,  lng:-99.1,  cat:'politics',  imp:3, zoom:4, headline:'Mexico election: Sheinbaum holds commanding lead days before vote',          source:'Reuters',  ago:'5h'  },
+  { lat:55.7,  lng:37.6,   cat:'conflict',  imp:4, zoom:4, headline:'Moscow responds to NATO expansion talks with new "red lines" ultimatum',     source:'TASS',     ago:'7h'  },
+  { lat:23.1,  lng:113.3,  cat:'economy',   imp:2, zoom:4, headline:'Guangdong factory output falls 4.2% as US trade restrictions bite',         source:'Xinhua',   ago:'9h'  },
+  { lat:-34.6, lng:-58.4,  cat:'economy',   imp:3, zoom:4, headline:'Argentina peso hits new low as Milei austerity programme deepens',           source:'Reuters',  ago:'4h'  },
+  { lat:6.4,   lng:2.3,    cat:'economy',   imp:2, zoom:4, headline:'Lagos port: Nigeria dockworkers begin indefinite strike',                    source:'Guardian', ago:'11h' },
+  { lat:28.6,  lng:77.2,   cat:'disaster',  imp:3, zoom:4, headline:'Delhi heat emergency: temperatures hit 47°C, power grid under strain',      source:'Times',    ago:'6h'  },
+  { lat:-1.3,  lng:36.8,   cat:'climate',   imp:2, zoom:4, headline:'Nairobi: East Africa faces worst drought in 40 years, UN warns',            source:'UN',       ago:'1d'  },
+  { lat:31.2,  lng:121.5,  cat:'economy',   imp:3, zoom:4, headline:'Shanghai: China unveils $138B stimulus package to boost slowing economy',   source:'Bloomberg',ago:'10h' },
+  { lat:43.6,  lng:-79.4,  cat:'society',   imp:2, zoom:4, headline:'Canada: Ontario nurses vote for strike over pay and working conditions',     source:'CBC',      ago:'7h'  },
+  { lat:-33.9, lng:151.2,  cat:'climate',   imp:2, zoom:4, headline:'Sydney: record October bushfire season begins weeks early, state of emergency', source:'ABC',  ago:'9h'  },
+  { lat:60.2,  lng:24.9,   cat:'society',   imp:2, zoom:4, headline:'Finland: government proposes 4-day working week pilot for civil servants',   source:'YLE',      ago:'15h' },
+  { lat:4.9,   lng:114.9,  cat:'climate',   imp:2, zoom:4, headline:'Borneo: deforestation rate accelerates despite ASEAN pledges',              source:'Reuters',  ago:'1d'  },
+
+  // ── LOCAL (zoom 6) ───────────────────────────────────
+  { lat:51.52, lng:-0.08,  cat:'politics',  imp:2, zoom:6, headline:'London: Metropolitan Police probes leaked Downing Street audio recording',  source:'Times',    ago:'3h'  },
+  { lat:48.86, lng:2.35,   cat:'disaster',  imp:3, zoom:6, headline:'Paris 15e: gas explosion in Rue de Lourmel; 4 dead, 17 injured',            source:'BFMTV',    ago:'1h'  },
+  { lat:52.52, lng:13.38,  cat:'politics',  imp:2, zoom:6, headline:'Berlin: AfD wins Neukölln district seat in closely watched by-election',    source:'Spiegel',  ago:'5h'  },
+  { lat:31.77, lng:35.21,  cat:'conflict',  imp:3, zoom:6, headline:'Jerusalem: clashes at Al-Aqsa compound; 12 arrested, 30 injured',           source:'Haaretz',  ago:'2h'  },
+  { lat:40.71, lng:-74.0,  cat:'politics',  imp:2, zoom:6, headline:'NYC: Mayor Adams faces updated federal corruption charges filing',           source:'NYT',      ago:'4h'  },
+  { lat:34.05, lng:-118.2, cat:'disaster',  imp:4, zoom:6, headline:'Los Angeles: wildfire spreads near Griffith Park; 1,200 evacuated',         source:'LAT',      ago:'45m' },
+  { lat:25.03, lng:121.56, cat:'conflict',  imp:3, zoom:6, headline:'Taipei: Taiwan Strait radar detects 24 PLA aircraft in overnight incursion',source:'CNA',      ago:'3h'  },
+  { lat:48.14, lng:11.58,  cat:'society',   imp:1, zoom:6, headline:'Munich: Oktoberfest organisers announce record 7.2 million visitors',        source:'DW',       ago:'8h'  },
+  { lat:19.07, lng:72.87,  cat:'disaster',  imp:3, zoom:6, headline:'Mumbai: monsoon floods Western Express Highway; 40cm of rain in 4 hours',   source:'IE',       ago:'2h'  },
+  { lat:-23.55,lng:-46.63, cat:'politics',  imp:2, zoom:6, headline:'São Paulo: police raid illegal gambling network linked to city council',     source:'Folha',    ago:'6h'  },
+  { lat:55.75, lng:37.62,  cat:'disaster',  imp:3, zoom:6, headline:'Moscow: fire at chemical plant in Dorogomilovo; residents sheltering',      source:'Meduza',   ago:'1h'  },
+  { lat:30.05, lng:31.25,  cat:'disaster',  imp:3, zoom:6, headline:'Cairo Nasr City: building collapse kills 4, injures 17',                    source:'Al-Ahram', ago:'5h'  },
+  { lat:53.35, lng:-6.26,  cat:'society',   imp:2, zoom:6, headline:'Dublin: housing protest draws 50,000 as rents hit record highs',             source:'Irish Times',ago:'4h'},
+  { lat:45.46, lng:9.19,   cat:'economy',   imp:2, zoom:6, headline:'Milan: fashion industry strikes as designers protest AI copying cases',      source:'Corriere', ago:'11h' },
+  { lat:35.68, lng:139.69, cat:'economy',   imp:2, zoom:6, headline:'Tokyo: Bank of Japan meets as yen weakness fuels inflation concerns',        source:'Nikkei',   ago:'6h'  },
+  { lat:37.57, lng:126.97, cat:'society',   imp:2, zoom:6, headline:'Seoul: record low birth rate sparks emergency government intervention',      source:'Yonhap',   ago:'9h'  },
+  { lat:22.32, lng:114.17, cat:'politics',  imp:2, zoom:6, headline:'Hong Kong: government tightens press accreditation rules for foreign media', source:'SCMP',     ago:'13h' },
+  { lat:-26.2, lng:28.04,  cat:'society',   imp:2, zoom:6, headline:'Johannesburg: power cuts hit 12 hours as Eskom load-shedding escalates',   source:'Mail&G',   ago:'7h'  },
+  { lat:43.7,  lng:-79.42, cat:'economy',   imp:1, zoom:6, headline:'Toronto: housing prices fall 8% year-on-year as interest rates bite',       source:'Globe',    ago:'10h' },
+  { lat:33.57, lng:-7.59,  cat:'society',   imp:2, zoom:6, headline:'Casablanca: teachers strike enters third week over pay and conditions',      source:'MAP',      ago:'1d'  },
+  { lat:13.75, lng:100.5,  cat:'politics',  imp:2, zoom:6, headline:'Bangkok: opposition leader arrested ahead of parliament no-confidence vote',source:'Bangkok Post',ago:'8h'},
+  { lat:59.33, lng:18.07,  cat:'climate',   imp:2, zoom:6, headline:'Stockholm: Sweden records warmest April in 250 years of measurement',       source:'SVT',      ago:'1d'  },
+  { lat:41.38, lng:2.17,   cat:'society',   imp:1, zoom:6, headline:'Barcelona: city bans tourist apartments in historic centre from 2025',      source:'El País',  ago:'2d'  },
+  { lat:50.08, lng:14.44,  cat:'society',   imp:1, zoom:6, headline:'Prague: Czech universities announce 20% international student fee increase', source:'CT',       ago:'1d'  },
+];
+
+const STREAMS = [
+  { name:'Al Jazeera English', sub:'Middle East / Global', live:true  },
+  { name:'BBC World News',     sub:'Global',               live:true  },
+  { name:'France 24',          sub:'Europe / Africa',      live:true, closed:true },
+  { name:'DW News',            sub:'Europe',               live:true  },
+  { name:'CNN International',  sub:'Americas / Global',    live:false },
+];
+
+// ── BUILD STREAMS ───────────────────────────────────────
+const sc = document.getElementById('streams');
+STREAMS.forEach((s,i)=>{
+  const el = document.createElement('div');
+  el.className = 'stile';
+  el.innerHTML = `
+    <div class="stile-hdr" onclick="tog(${i})">
+      <div><div class="stile-name">${s.name}</div><div class="stile-sub">${s.sub}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+        ${s.live?'<span class="stile-live">● LIVE</span>':'<span style="color:#445;font-size:9px">OFFLINE</span>'}
+        <button class="min-btn" id="mb${i}">${s.closed?'▼':'▲'}</button>
+      </div>
+    </div>
+    <div class="stile-body${s.closed?' closed':''}" id="sb${i}">
+      <div class="stile-thumb">
+        <div class="play-btn">▶</div>
+        <div class="stile-lbl">LIVE STREAM</div>
+      </div>
+    </div>`;
+  sc.appendChild(el);
+});
+function tog(i){
+  const b=document.getElementById('sb'+i), btn=document.getElementById('mb'+i);
+  b.classList.toggle('closed'); btn.textContent=b.classList.contains('closed')?'▼':'▲';
+}
+
+// ── MAP SETUP ───────────────────────────────────────────
+const map = L.map('map',{ center:[22,12], zoom:2, minZoom:2, maxZoom:13, zoomControl:true });
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png',{
+  subdomains:'abcd', maxZoom:19
+}).addTo(map);
+
+// ── BUILD MARKERS ───────────────────────────────────────
+const markers = STORIES.map(s => {
+  const c = CAT[s.cat].color;
+  const r = radius(s.imp);
+  const tot = r*2 + 24;
+
+  const icon = L.divIcon({
+    className:'',
+    html:`<div style="position:relative;width:${tot}px;height:${tot}px">
+      <div style="position:absolute;border-radius:50%;border:2px solid ${c};
+        top:50%;left:50%;animation:mring ${1.8+s.imp*.2}s ease-out infinite;opacity:0;"></div>
+      <div style="position:absolute;border-radius:50%;background:${c};
+        width:${r*2}px;height:${r*2}px;top:50%;left:50%;
+        transform:translate(-50%,-50%);
+        box-shadow:0 0 ${r+4}px ${c},0 0 ${r*2}px rgba(0,0,0,.6);
+        cursor:pointer;"></div>
+    </div>`,
+    iconSize:[tot,tot], iconAnchor:[tot/2,tot/2]
+  });
+
+  const m = L.marker([s.lat,s.lng],{ icon, zIndexOffset: s.imp*100 });
+  m.bindTooltip(`
+    <div class="nt-cat">${CAT[s.cat].label}</div>
+    <div class="nt-h">${s.headline}</div>
+    <div class="nt-m">${s.source} · ${s.ago} ago · importance ${s.imp}/5</div>
+    <div class="nt-vid"><span style="font-size:13px">▶</span><span>Latest clip · ${s.source}</span></div>`,
+    { className:'nt', direction:'top', offset:[0,-r-4], opacity:1 });
+  m._minZoom = s.zoom;
+  m._story   = s;
+  return m;
+});
+
+// ── ZOOM VISIBILITY ─────────────────────────────────────
+function refresh(){
+  const z = map.getZoom();
+  let n = 0;
+  markers.forEach(m => {
+    const show = z >= m._minZoom;
+    if(show && !map.hasLayer(m)) map.addLayer(m);
+    if(!show && map.hasLayer(m))  map.removeLayer(m);
+    if(show) n++;
+  });
+  document.getElementById('visCount').textContent = n;
+  document.getElementById('hint').style.opacity = z>=5?'0':'1';
+}
+map.on('zoomend', refresh);
+refresh();
+
+// ── STORY FEED ──────────────────────────────────────────
+const feed = document.getElementById('feed');
+STORIES.filter(s=>s.zoom===2).sort((a,b)=>b.imp-a.imp).slice(0,10).forEach(s=>{
+  const c = CAT[s.cat].color;
+  const sz = radius(s.imp);
+  const d = document.createElement('div');
+  d.className='scard';
+  d.innerHTML=`
+    <div class="scard-top">
+      <div class="scard-dot" style="width:${sz}px;height:${sz}px;background:${c};box-shadow:0 0 6px ${c};"></div>
+      <span class="scard-cat" style="color:${c}">${CAT[s.cat].label}</span>
+    </div>
+    <div class="scard-h">${s.headline}</div>
+    <div class="scard-m">${s.source} · ${s.ago} ago</div>`;
+  d.onclick = ()=> map.flyTo([s.lat,s.lng], Math.max(4,map.getZoom()), {duration:1.2});
+  feed.appendChild(d);
+});
+
+// ── MOCK REFRESH PULSE ──────────────────────────────────
+const rl = document.getElementById('rlbl');
+setInterval(()=>{ rl.textContent='↻ Refreshing…'; setTimeout(()=>rl.textContent='↻ Live',900); }, 18000);
+
+// ── ENSURE MAP SIZES CORRECTLY ──────────────────────────
+setTimeout(()=>map.invalidateSize(),300);
+window.addEventListener('resize',()=>map.invalidateSize());
+</script>
+</body>
+</html>

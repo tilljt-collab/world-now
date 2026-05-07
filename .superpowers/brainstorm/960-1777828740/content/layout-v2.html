@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorldNow — Interactive Mockup</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #080c18;
+    color: #fff;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    background: linear-gradient(90deg, #0e0e1e, #14142a);
+    border-bottom: 2px solid #c0392b;
+    padding: 0 16px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 1000;
+  }
+  .topbar-logo { font-size: 18px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; }
+  .topbar-logo span { color: #e74c3c; }
+  .live-badge {
+    background: #e74c3c; color: #fff; font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 3px; letter-spacing: 1px;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+  .topbar-ticker {
+    flex: 1; margin: 0 24px; overflow: hidden; font-size: 11px; color: #aabbdd;
+    letter-spacing: 0.5px; border-left: 2px solid #e74c3c; padding-left: 10px;
+    white-space: nowrap; text-overflow: ellipsis;
+  }
+  .ticker-label { color: #e74c3c; font-weight: 700; margin-right: 8px; }
+  .topbar-stats { display: flex; gap: 20px; align-items: center; }
+  .stat { text-align: center; }
+  .stat-num { font-size: 20px; font-weight: 800; color: #e74c3c; line-height: 1; }
+  .stat-label { font-size: 9px; color: #8899bb; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* MAIN */
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* SIDE PANELS */
+  .side-panel {
+    width: 215px; flex-shrink: 0; background: #0b0f1f;
+    border-right: 1px solid #1a2040; display: flex; flex-direction: column;
+    overflow-y: auto; z-index: 500;
+  }
+  .side-panel.right { border-right: none; border-left: 1px solid #1a2040; }
+  .panel-header {
+    padding: 8px 12px; font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: #8899bb; border-bottom: 1px solid #1a2040;
+    display: flex; align-items: center; justify-content: space-between;
+    background: #0d1225; position: sticky; top: 0; z-index: 2;
+  }
+  .stream-tile { border-bottom: 1px solid #141830; }
+  .stream-tile-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; background: #0f1428; cursor: pointer; user-select: none;
+  }
+  .stream-tile-header:hover { background: #141a35; }
+  .stream-name { font-size: 11px; font-weight: 600; color: #ccd8ff; }
+  .stream-region { font-size: 9px; color: #556688; margin-top: 1px; }
+  .stream-live { color: #e74c3c; font-size: 9px; font-weight: 700; }
+  .stream-body { overflow: hidden; transition: max-height 0.25s ease; max-height: 120px; }
+  .stream-body.collapsed { max-height: 0; }
+  .stream-video {
+    height: 110px; background: #060a16; display: flex; align-items: center;
+    justify-content: center; border-top: 1px solid #1a2040;
+  }
+  .stream-video-inner {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #0a1020, #0d1830, #0a0c18);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  }
+  .play-icon {
+    width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(231,76,60,0.6);
+    display: flex; align-items: center; justify-content: center; color: #e74c3c; font-size: 11px;
+  }
+  .stream-label { font-size: 9px; color: #334; letter-spacing: 1px; }
+  .minimise-btn {
+    background: none; border: none; color: #556; cursor: pointer;
+    font-size: 10px; padding: 2px 4px; border-radius: 2px;
+  }
+  .minimise-btn:hover { color: #aabbdd; background: rgba(255,255,255,0.05); }
+
+  /* STORY CARDS */
+  .story-card {
+    padding: 10px 12px; border-bottom: 1px solid #141830;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .story-card:hover { background: #111826; }
+  .story-region {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 5px;
+  }
+  .severity-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  }
+  .region-tag { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+  .story-headline { font-size: 11px; font-weight: 600; color: #dde8ff; line-height: 1.4; margin-bottom: 3px; }
+  .story-meta { font-size: 9px; color: #445; }
+
+  /* MAP */
+  .map-area { flex: 1; position: relative; }
+  #map { width: 100%; height: 100%; }
+
+  /* Leaflet overrides for dark theme */
+  .leaflet-container { background: #060b18 !important; }
+  .leaflet-control-zoom a {
+    background: rgba(10,14,30,0.92) !important; color: #aabbdd !important;
+    border-color: #2a3560 !important;
+  }
+  .leaflet-control-zoom a:hover { background: #141a35 !important; color: #fff !important; }
+  .leaflet-control-attribution { display: none; }
+
+  /* Custom markers */
+  .news-marker {
+    position: relative; display: flex; align-items: center; justify-content: center;
+  }
+  .marker-dot {
+    border-radius: 50%; position: relative; z-index: 2;
+    box-shadow: 0 0 10px currentColor; cursor: pointer;
+  }
+  .marker-ring {
+    position: absolute; border-radius: 50%; border: 2px solid;
+    animation: markerPulse 2s infinite; opacity: 0;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+  }
+  @keyframes markerPulse {
+    0% { width: 10px; height: 10px; opacity: 0.9; }
+    100% { width: 36px; height: 36px; opacity: 0; }
+  }
+
+  /* Tooltip */
+  .news-tooltip {
+    background: rgba(8,12,28,0.97) !important;
+    border: 1px solid #2a3560 !important;
+    border-left: 3px solid #e74c3c !important;
+    border-radius: 4px !important;
+    color: #fff !important;
+    padding: 10px 14px !important;
+    font-family: 'Segoe UI', system-ui, sans-serif !important;
+    font-size: 12px !important;
+    max-width: 220px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8) !important;
+  }
+  .news-tooltip::before { display: none !important; }
+  .leaflet-tooltip { pointer-events: none !important; }
+  .tt-region { font-size: 9px; color: #8899bb; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+  .tt-headline { font-size: 12px; font-weight: 600; color: #fff; line-height: 1.35; margin-bottom: 5px; }
+  .tt-meta { font-size: 9px; color: #556; margin-bottom: 8px; }
+  .tt-video {
+    background: linear-gradient(135deg, #0a1428, #0d1a30);
+    border: 1px solid #1e2a50; border-radius: 3px;
+    padding: 8px; display: flex; align-items: center; gap: 8px; font-size: 9px; color: #445;
+  }
+
+  /* Zoom hint overlay */
+  .zoom-hint {
+    position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+    background: rgba(8,12,28,0.85); border: 1px solid #2a3560;
+    padding: 6px 14px; border-radius: 20px; font-size: 10px; color: #8899bb;
+    letter-spacing: 1px; z-index: 900; pointer-events: none;
+    opacity: 1; transition: opacity 0.5s;
+  }
+
+  /* Bottom ticker */
+  .bottom-bar {
+    height: 30px; background: #e74c3c; display: flex;
+    align-items: center; flex-shrink: 0; overflow: hidden; z-index: 1000;
+  }
+  .bottom-tag {
+    background: #c0392b; height: 100%; padding: 0 12px;
+    display: flex; align-items: center; font-size: 10px;
+    font-weight: 800; letter-spacing: 2px; white-space: nowrap; flex-shrink: 0;
+  }
+  .ticker-wrap { overflow: hidden; flex: 1; }
+  .ticker-content {
+    display: inline-block; white-space: nowrap; font-size: 11px;
+    animation: ticker 30s linear infinite; padding-left: 100%;
+  }
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="topbar-logo">WORLD<span>NOW</span></div>
+    <div class="live-badge">● LIVE</div>
+  </div>
+  <div class="topbar-ticker">
+    <span class="ticker-label">BREAKING</span>
+    Gaza ceasefire talks collapse · India election: Modi projected to win third term · ECB signals rate cut · Ukraine frontline shifts near Kharkiv
+  </div>
+  <div class="topbar-stats">
+    <div class="stat"><div class="stat-num" id="storyCount">47</div><div class="stat-label">Stories</div></div>
+    <div class="stat"><div class="stat-num" style="color:#e67e22;">12</div><div class="stat-label">Breaking</div></div>
+    <div class="stat"><div class="stat-num" style="color:#2ecc71;">5</div><div class="stat-label">Live</div></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT — Livestreams -->
+  <div class="side-panel" id="leftPanel">
+    <div class="panel-header">
+      <span>Live Streams</span>
+      <span style="color:#e74c3c;">● 4 Live</span>
+    </div>
+    <div id="streams"></div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-area">
+    <div id="map"></div>
+    <div class="zoom-hint" id="zoomHint">🔍 Zoom in to see more regional stories</div>
+  </div>
+
+  <!-- RIGHT — Top Stories -->
+  <div class="side-panel right">
+    <div class="panel-header">
+      <span>Top Stories</span>
+      <span style="color:#2ecc71;font-size:9px;" id="refreshLabel">↻ Live</span>
+    </div>
+    <div id="storyFeed"></div>
+  </div>
+
+</div>
+
+<!-- BOTTOM TICKER -->
+<div class="bottom-bar">
+  <div class="bottom-tag">BREAKING</div>
+  <div class="ticker-wrap">
+    <span class="ticker-content">
+      Gaza ceasefire talks collapse as fighting intensifies in southern Rafah &nbsp;·&nbsp;
+      India election: Modi projected to win third term with reduced majority &nbsp;·&nbsp;
+      ECB signals rate cut as eurozone growth stalls &nbsp;·&nbsp;
+      Ukraine frontline shifts near Kharkiv · US approves $61B foreign aid to Ukraine &nbsp;·&nbsp;
+      China military drills near Taiwan Strait escalate &nbsp;·&nbsp;
+      Brazil flooding displaces 200,000 in Rio Grande do Sul &nbsp;·&nbsp;
+      South Korea president under pressure amid snap election calls
+    </span>
+  </div>
+</div>
+
+<script>
+// ── DATA ────────────────────────────────────────────────────────────────────
+// minZoom: marker only shows at >= this zoom level (2=global, 4=regional, 6=local)
+const stories = [
+  // GLOBAL (zoom 2+)
+  { id:1, lat:31.5, lng:34.8,  headline:"Gaza ceasefire talks collapse as fighting intensifies in Rafah",       region:"Middle East", source:"Reuters", ago:"4m",  severity:"critical", zoom:2 },
+  { id:2, lat:49.5, lng:36.2,  headline:"Ukraine frontline shifts as Russia advances in Kharkiv region",        region:"Europe",      source:"BBC",     ago:"11m", severity:"critical", zoom:2 },
+  { id:3, lat:20.6, lng:78.9,  headline:"India election: Modi projected to win third term, reduced majority",   region:"Asia",        source:"AP",      ago:"22m", severity:"high",     zoom:2 },
+  { id:4, lat:38.9, lng:-77.0, headline:"US Senate approves $61B foreign aid package for Ukraine",              region:"Americas",    source:"CNN",     ago:"35m", severity:"high",     zoom:2 },
+  { id:5, lat:25.0, lng:121.5, headline:"China escalates military drills near Taiwan Strait",                   region:"Asia-Pacific",source:"Reuters", ago:"2h",  severity:"high",     zoom:2 },
+  { id:6, lat:51.5, lng:-0.1,  headline:"UK election campaign heats up as polls tighten ahead of July vote",   region:"Europe",      source:"Guardian",ago:"1h",  severity:"medium",   zoom:2 },
+  { id:7, lat:-23.5,lng:-46.6, headline:"Brazil flooding displaces 200,000 in Rio Grande do Sul",              region:"S. America",  source:"AP",      ago:"3h",  severity:"medium",   zoom:2 },
+  { id:8, lat:50.4, lng:30.5,  headline:"Kyiv under drone attack; air defenses intercept 18 of 22 launched",   region:"Europe",      source:"Reuters", ago:"6m",  severity:"critical", zoom:2 },
+  { id:9, lat:35.7, lng:51.4,  headline:"Iran nuclear talks stall as IAEA warns of enrichment escalation",     region:"Middle East", source:"FT",      ago:"45m", severity:"high",     zoom:2 },
+  { id:10,lat:1.3,  lng:103.8, headline:"ASEAN summit opens in Singapore amid South China Sea tensions",        region:"Asia",        source:"Reuters", ago:"5h",  severity:"medium",   zoom:2 },
+
+  // REGIONAL (zoom 4+)
+  { id:11,lat:48.8, lng:2.3,   headline:"Paris protests: thousands march against pension reform extension",     region:"France",      source:"Le Monde",ago:"2h",  severity:"medium",   zoom:4 },
+  { id:12,lat:52.5, lng:13.4,  headline:"Germany coalition crisis deepens as FDP threatens to walk out",       region:"Germany",     source:"DW",      ago:"3h",  severity:"medium",   zoom:4 },
+  { id:13,lat:40.4, lng:-3.7,  headline:"Spain votes in snap regional elections across three autonomous communities", region:"Spain", source:"El País", ago:"4h", severity:"medium",  zoom:4 },
+  { id:14,lat:41.0, lng:29.0,  headline:"Istanbul mayoral election: opposition leads as count continues",       region:"Turkey",      source:"Hurriyet",ago:"1h",  severity:"high",     zoom:4 },
+  { id:15,lat:30.0, lng:31.2,  headline:"Cairo: Egypt secures IMF deal worth $8B amid currency crisis",        region:"Egypt",       source:"Reuters", ago:"6h",  severity:"medium",   zoom:4 },
+  { id:16,lat:37.6, lng:126.9, headline:"South Korea president faces snap election pressure after scandal",     region:"Korea",       source:"Yonhap",  ago:"8h",  severity:"medium",   zoom:4 },
+  { id:17,lat:13.5, lng:2.1,   headline:"Niger junta expels French ambassador, seizes uranium facilities",     region:"West Africa", source:"AFP",     ago:"12h", severity:"high",     zoom:4 },
+  { id:18,lat:19.4, lng:-99.1, headline:"Mexico election: Sheinbaum holds commanding lead days before vote",   region:"Mexico",      source:"Reuters", ago:"5h",  severity:"medium",   zoom:4 },
+  { id:19,lat:55.7, lng:37.6,  headline:"Moscow: Kremlin responds to NATO expansion talks with 'red lines'",   region:"Russia",      source:"TASS",    ago:"7h",  severity:"high",     zoom:4 },
+  { id:20,lat:-33.9,lng:18.4,  headline:"South Africa elections: ANC loses majority for first time since 1994",region:"S. Africa",   source:"Reuters", ago:"2h",  severity:"high",     zoom:4 },
+  { id:21,lat:23.1, lng:113.3, headline:"Guangdong factory output falls 4.2% as trade tensions bite",          region:"China",       source:"Xinhua",  ago:"9h",  severity:"medium",   zoom:4 },
+  { id:22,lat:-34.6,lng:-58.4, headline:"Buenos Aires: Argentina peso hits new low as Milei austerity bites",  region:"Argentina",   source:"Reuters", ago:"4h",  severity:"medium",   zoom:4 },
+  { id:23,lat:6.4,  lng:2.3,   headline:"Lagos port: Nigeria dockworkers begin indefinite strike",             region:"Nigeria",     source:"Guardian",ago:"11h", severity:"medium",   zoom:4 },
+  { id:24,lat:28.6, lng:77.2,  headline:"Delhi heat emergency declared as temperatures hit 47°C",              region:"India",       source:"Times",   ago:"6h",  severity:"high",     zoom:4 },
+
+  // LOCAL (zoom 6+)
+  { id:25,lat:51.52,lng:-0.08, headline:"London: Metropolitan Police probes leaked Downing St audio",          region:"London, UK",  source:"Times",   ago:"3h",  severity:"medium",   zoom:6 },
+  { id:26,lat:48.86,lng:2.35,  headline:"Paris 15e: Residents evacuated after gas explosion in Rue de Lourmel",region:"Paris",       source:"BFMTV",   ago:"1h",  severity:"high",     zoom:6 },
+  { id:27,lat:52.52,lng:13.38, headline:"Berlin: AfD candidate wins Neukölln district seat in by-election",    region:"Berlin",      source:"Spiegel", ago:"5h",  severity:"medium",   zoom:6 },
+  { id:28,lat:31.77,lng:35.21, headline:"Jerusalem: Clashes at Al-Aqsa compound; 12 arrested",                 region:"Jerusalem",   source:"Haaretz", ago:"2h",  severity:"high",     zoom:6 },
+  { id:29,lat:40.71,lng:-74.0, headline:"NYC: Mayor Adams faces federal corruption charges updated filing",     region:"New York",    source:"NYT",     ago:"4h",  severity:"medium",   zoom:6 },
+  { id:30,lat:34.05,lng:-118.2,headline:"Los Angeles: Wildfire spreads near Griffith Park; 1,200 evacuated",   region:"Los Angeles", source:"LAT",     ago:"45m", severity:"critical", zoom:6 },
+  { id:31,lat:25.03,lng:121.56,headline:"Taipei: Taiwan Strait radar detects 24 PLA aircraft incursion",       region:"Taipei",      source:"CNA",     ago:"3h",  severity:"high",     zoom:6 },
+  { id:32,lat:48.14,lng:11.58, headline:"Munich: Oktoberfest organisers announce record 7.2M visitors",        region:"Munich",      source:"DW",      ago:"8h",  severity:"medium",   zoom:6 },
+  { id:33,lat:19.07,lng:72.87, headline:"Mumbai: Heavy monsoon floods Western Express Highway; 40cm in 4h",    region:"Mumbai",      source:"Indian Express",ago:"2h",severity:"high",  zoom:6 },
+  { id:34,lat:-23.55,lng:-46.63,headline:"São Paulo: Police raid illegal gambling network linked to city council",region:"São Paulo",source:"Folha",  ago:"6h",  severity:"medium",   zoom:6 },
+  { id:35,lat:55.75,lng:37.62, headline:"Moscow Dorogomilovo: fire at chemical plant; residents sheltering",   region:"Moscow",      source:"Meduza",  ago:"1h",  severity:"high",     zoom:6 },
+  { id:36,lat:30.05,lng:31.25, headline:"Cairo Nasr City: building collapse kills 4, injures 17",              region:"Cairo",       source:"Al-Ahram",ago:"5h",  severity:"high",     zoom:6 },
+];
+
+const streams = [
+  { name:"Al Jazeera English", region:"Middle East / Global", live:true },
+  { name:"BBC World News",     region:"Global",               live:true },
+  { name:"France 24",          region:"Europe / Africa",      live:true, collapsed:true },
+  { name:"DW News",            region:"Europe",               live:true },
+  { name:"CNN International",  region:"Americas / Global",    live:false },
+];
+
+// ── STREAMS ─────────────────────────────────────────────────────────────────
+const streamContainer = document.getElementById('streams');
+streams.forEach((s, i) => {
+  const tile = document.createElement('div');
+  tile.className = 'stream-tile';
+  const isCollapsed = s.collapsed || false;
+  tile.innerHTML = `
+    <div class="stream-tile-header" onclick="toggleStream(${i})">
+      <div>
+        <div class="stream-name">${s.name}</div>
+        <div class="stream-region">${s.region}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        ${s.live ? '<span class="stream-live">● LIVE</span>' : '<span style="color:#445;font-size:9px;">OFFLINE</span>'}
+        <button class="minimise-btn" id="btn-${i}">${isCollapsed ? '▼' : '▲'}</button>
+      </div>
+    </div>
+    <div class="stream-body ${isCollapsed ? 'collapsed' : ''}" id="body-${i}">
+      <div class="stream-video">
+        <div class="stream-video-inner">
+          <div class="play-icon">▶</div>
+          <div class="stream-label">LIVE STREAM</div>
+        </div>
+      </div>
+    </div>`;
+  streamContainer.appendChild(tile);
+});
+
+function toggleStream(i) {
+  const body = document.getElementById('body-' + i);
+  const btn  = document.getElementById('btn-' + i);
+  body.classList.toggle('collapsed');
+  btn.textContent = body.classList.contains('collapsed') ? '▼' : '▲';
+}
+
+// ── MAP ──────────────────────────────────────────────────────────────────────
+const map = L.map('map', {
+  center: [20, 15],
+  zoom: 2,
+  minZoom: 2,
+  maxZoom: 12,
+  zoomControl: true,
+});
+
+// Dark matter tiles from CartoDB (free, no key)
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png', {
+  subdomains: 'abcd',
+  maxZoom: 19,
+}).addTo(map);
+
+// ── MARKERS ──────────────────────────────────────────────────────────────────
+const severityConfig = {
+  critical: { color: '#e74c3c', size: 14, delay: '0s'   },
+  high:     { color: '#e67e22', size: 10, delay: '0.3s' },
+  medium:   { color: '#2980b9', size:  8, delay: '0.6s' },
+};
+
+const leafletMarkers = [];
+
+stories.forEach(story => {
+  const cfg = severityConfig[story.severity];
+
+  const icon = L.divIcon({
+    className: '',
+    html: `
+      <div class="news-marker" style="width:${cfg.size+20}px;height:${cfg.size+20}px;position:relative;">
+        <div class="marker-ring" style="border-color:${cfg.color};animation-delay:${cfg.delay};"></div>
+        <div class="marker-dot" style="
+          width:${cfg.size}px;height:${cfg.size}px;
+          background:${cfg.color};color:${cfg.color};
+          position:absolute;top:50%;left:50%;
+          transform:translate(-50%,-50%);
+          border-radius:50%;
+          box-shadow:0 0 ${cfg.size}px ${cfg.color};
+        "></div>
+      </div>`,
+    iconSize: [cfg.size+20, cfg.size+20],
+    iconAnchor: [(cfg.size+20)/2, (cfg.size+20)/2],
+  });
+
+  const marker = L.marker([story.lat, story.lng], { icon, zIndexOffset: story.severity === 'critical' ? 1000 : story.severity === 'high' ? 500 : 0 });
+
+  const ttHtml = `
+    <div class="tt-region">${story.severity === 'critical' ? '🔴' : story.severity === 'high' ? '🟠' : '🔵'} ${story.region}</div>
+    <div class="tt-headline">${story.headline}</div>
+    <div class="tt-meta">${story.source} · ${story.ago} ago</div>
+    <div class="tt-video"><span style="font-size:14px;">▶</span><span>Latest clip · ${story.source}</span></div>`;
+
+  marker.bindTooltip(ttHtml, {
+    className: 'news-tooltip',
+    direction: 'top',
+    offset: [0, -8],
+    permanent: false,
+    opacity: 1,
+  });
+
+  marker._storyZoom = story.minZoom || story.zoom;
+  marker._story = story;
+  leafletMarkers.push(marker);
+});
+
+// ── ZOOM-BASED VISIBILITY ───────────────────────────────────────────────────
+function updateMarkers() {
+  const z = map.getZoom();
+  let visible = 0;
+  leafletMarkers.forEach(m => {
+    if (z >= m._storyZoom) {
+      if (!map.hasLayer(m)) map.addLayer(m);
+      visible++;
+    } else {
+      if (map.hasLayer(m)) map.removeLayer(m);
+    }
+  });
+  document.getElementById('storyCount').textContent = visible;
+
+  const hint = document.getElementById('zoomHint');
+  if (z >= 5) { hint.style.opacity = '0'; }
+  else { hint.style.opacity = '1'; }
+}
+
+map.on('zoomend', updateMarkers);
+updateMarkers();
+
+// ── STORY FEED ───────────────────────────────────────────────────────────────
+const feed = document.getElementById('storyFeed');
+const topStories = stories.filter(s => s.zoom === 2).slice(0, 8);
+topStories.forEach(s => {
+  const cfg = severityConfig[s.severity];
+  const card = document.createElement('div');
+  card.className = 'story-card';
+  card.innerHTML = `
+    <div class="story-region">
+      <div class="severity-dot" style="background:${cfg.color};box-shadow:0 0 5px ${cfg.color};"></div>
+      <span class="region-tag" style="color:${cfg.color};">${s.severity} · ${s.region}</span>
+    </div>
+    <div class="story-headline">${s.headline}</div>
+    <div class="story-meta">${s.source} · ${s.ago} ago</div>`;
+  card.onclick = () => map.flyTo([s.lat, s.lng], 5, { duration: 1.2 });
+  feed.appendChild(card);
+});
+
+// ── MOCK AUTO-REFRESH PULSE ──────────────────────────────────────────────────
+let refreshLabel = document.getElementById('refreshLabel');
+setInterval(() => {
+  refreshLabel.textContent = '↻ Refreshing...';
+  setTimeout(() => { refreshLabel.textContent = '↻ Live'; }, 800);
+}, 15000);
+</script>
+</body>
+</html>
