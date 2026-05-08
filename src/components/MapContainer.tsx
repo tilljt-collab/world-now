@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useCallback, useState } from 'react'
-import maplibregl from 'maplibre-gl'
+import maplibregl, { setWorkerUrl } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { Story, Category } from '@/lib/types'
 import { CATEGORY_COLORS, DOT_RADII } from '@/lib/types'
@@ -38,6 +38,8 @@ export default function MapContainer({ stories, activeCategories, onFlyTo }: Map
   // Initialise map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
+
+    setWorkerUrl('/maplibre-gl-csp-worker.js')
 
     const map = new maplibregl.Map({
       container: containerRef.current,
