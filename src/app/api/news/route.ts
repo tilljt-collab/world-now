@@ -5,10 +5,11 @@ import { categorize } from '@/lib/categorize'
 import { scoreImportance } from '@/lib/importance'
 import type { Story } from '@/lib/types'
 import { createHash } from 'crypto'
+import { MOCK_STORIES } from '@/lib/mockStories'
 
 const QUERIES = [
-  'world news', 'war conflict', 'politics election',
-  'economy finance', 'climate disaster', 'diplomacy international',
+  'world news politics war',
+  'climate economy disaster diplomacy',
 ]
 
 function timeAgo(iso: string): string {
@@ -17,13 +18,6 @@ function timeAgo(iso: string): string {
   if (secs < 3600) return `${Math.floor(secs / 60)}m`
   if (secs < 86400) return `${Math.floor(secs / 3600)}h`
   return `${Math.floor(secs / 86400)}d`
-}
-
-function zoomTier(importance: number): 2 | 4 | 6 | 8 {
-  if (importance >= 4) return 2
-  if (importance === 3) return 4
-  if (importance === 2) return 6
-  return 8
 }
 
 async function fetchStories(): Promise<Story[]> {
@@ -76,7 +70,7 @@ async function fetchStories(): Promise<Story[]> {
       ago: timeAgo(a.publishedAt),
       category: categorize(a.title),
       importance,
-      minZoom: zoomTier(importance),
+      minZoom: ([2, 3, 4, 5, 6] as const)[5 - importance] ?? 2,
     })
   }
 
@@ -103,9 +97,10 @@ export async function GET() {
   }
 
   try {
-    return NextResponse.json(await inflight)
+    const stories = await inflight
+    return NextResponse.json(stories.length > 0 ? stories : MOCK_STORIES)
   } catch (err) {
     console.error('news fetch error:', err)
-    return NextResponse.json({ error: 'Failed to fetch news' }, { status: 500 })
+    return NextResponse.json(MOCK_STORIES)
   }
 }

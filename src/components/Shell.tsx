@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import type { Category, Story } from '@/lib/types'
+import { PRESETS, type Preset, type PresetId } from '@/lib/presets'
 import TopBar from './TopBar'
 import BottomBar from './BottomBar'
 import LeftPanel, { LIVE_STREAM_COUNT } from './LeftPanel'
@@ -9,6 +10,7 @@ import RightPanel from './RightPanel'
 import CategoryFilter from './CategoryFilter'
 import BreakingFlash from './BreakingFlash'
 import ZoomHint from './ZoomHint'
+import WelcomeScreen from './WelcomeScreen'
 
 const MapContainer = dynamic(() => import('./MapContainer'), { ssr: false })
 
@@ -20,9 +22,18 @@ export default function Shell() {
   const [activeCategories, setActiveCategories] = useState<Set<Category>>(new Set(ALL_CATS))
   const [refreshing, setRefreshing] = useState(false)
   const [flash,      setFlash]      = useState<{ headline: string; visible: boolean }>({ headline: '', visible: false })
+  const [preset,     setPreset]     = useState<Preset>(PRESETS[0])
+  const [showWelcome, setShowWelcome] = useState(true)
+  const [keyword,    setKeyword]    = useState('')
   const flyToRef = useRef<((lat: number, lng: number, zoom?: number) => void) | null>(null)
   const prevIdsRef = useRef<Set<string>>(new Set())
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handlePresetSelect = useCallback((id: PresetId) => {
+    const p = PRESETS.find(pr => pr.id === id) ?? PRESETS[0]
+    setPreset(p)
+    setShowWelcome(false)
+  }, [])
 
   const fetchStories = useCallback(async (isInitial = false) => {
     if (!isInitial) setRefreshing(true)
@@ -61,6 +72,19 @@ export default function Shell() {
     flyToRef.current?.(lat, lng, 5)
   }, [])
 
+  const handleKeywordSearch = useCallback((kw: string) => {
+    setKeyword(kw)
+    if (!kw.trim()) return
+    const lower = kw.trim().toLowerCase()
+    const matches = stories.filter(s =>
+      s.headline.toLowerCase().includes(lower) ||
+      s.summary.toLowerCase().includes(lower)
+    )
+    if (!matches.length) return
+    const best = matches.reduce((a, b) => b.importance > a.importance ? b : a)
+    flyToRef.current?.(best.lat, best.lng, 5)
+  }, [stories])
+
   const handleMapFlyTo = useCallback((fn: (lat: number, lng: number, zoom?: number) => void) => {
     flyToRef.current = fn
   }, [])
@@ -73,11 +97,17 @@ export default function Shell() {
 
   return (
     <div className="flex flex-col h-screen">
+      {showWelcome && <WelcomeScreen onSelect={handlePresetSelect} />}
       <TopBar
         storyCount={visible.length}
         breakingCount={stories.filter(s => s.importance === 5).length}
         liveCount={LIVE_STREAM_COUNT}
         topHeadlines={topHeadlines}
+        preset={preset}
+        keyword={keyword}
+        onKeywordChange={setKeyword}
+        onSearch={handleKeywordSearch}
+        onChangeFocus={() => setShowWelcome(true)}
       />
       <BreakingFlash headline={flash.headline} visible={flash.visible} />
       <div className="flex flex-1 overflow-hidden min-h-0">
@@ -86,12 +116,14 @@ export default function Shell() {
           <MapContainer
             stories={stories}
             activeCategories={activeCategories}
+            preset={preset}
+            keyword={keyword}
             onFlyTo={handleMapFlyTo}
           />
           <CategoryFilter active={activeCategories} onChange={setActiveCategories} />
           <ZoomHint />
         </div>
-        <RightPanel stories={stories} onFlyTo={handleFlyTo} refreshing={refreshing} />
+        <RightPanel stories={stories} onFlyTo={handleFlyTo} refreshing={refreshing} preset={preset} />
       </div>
       <BottomBar headlines={topHeadlines} />
     </div>
