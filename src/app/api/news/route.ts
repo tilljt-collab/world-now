@@ -70,7 +70,7 @@ async function fetchStories(): Promise<Story[]> {
       ago: timeAgo(a.publishedAt),
       category: categorize(a.title),
       importance,
-      minZoom: ([2, 3, 4, 5, 6] as const)[5 - importance] ?? 2,
+      minZoom: ([2, 2, 4, 6, 8] as const)[5 - importance] ?? 2,
     })
   }
 
