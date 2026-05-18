@@ -3,11 +3,11 @@ import StreamTile from './StreamTile'
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/lib/types'
 
 const STREAMS = [
-  { name: 'Al Jazeera English', region: 'Middle East / Global', youtubeId: 'h3MuIUNCCzI', live: true },
-  { name: 'BBC World News',     region: 'Global',               youtubeId: 'w_Ma8oQLmSM', live: true },
-  { name: 'France 24',          region: 'Europe / Africa',      youtubeId: 'ikR7_EA8G0o', live: true, defaultCollapsed: true },
-  { name: 'DW News',            region: 'Europe',               youtubeId: 'oMjFoRkynhc', live: true },
-  { name: 'CNN International',  region: 'Americas / Global',    youtubeId: 'IFYVhkwHcls', live: false },
+  { name: 'BBC World News',     region: 'Global',               youtubeId: 'pToB3kRV30Q', live: true, channelUrl: 'https://www.youtube.com/@BBCNews/live' },
+  { name: 'Sky News',           region: 'UK / International',   youtubeId: 'nGTazxWGkyk', live: true, channelUrl: 'https://www.youtube.com/@SkyNews/live' },
+  { name: 'Al Jazeera English', region: 'Conflicts / Global',   youtubeId: 'gCNeDWCI0vo', live: true, channelUrl: 'https://www.youtube.com/@AlJazeeraEnglish/live' },
+  { name: 'Times Radio',        region: 'Politics / Analysis',  youtubeId: 'bSABp4TaSEw', live: true, channelUrl: 'https://www.youtube.com/@TimesRadio/live' },
+  { name: 'France 24',          region: 'Europe / Geopolitics', youtubeId: 'Ap-UM1O9RBU', live: true, channelUrl: 'https://www.youtube.com/@France24_en/live', defaultCollapsed: true },
 ]
 
 export const LIVE_STREAM_COUNT = STREAMS.filter(s => s.live).length

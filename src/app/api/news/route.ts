@@ -7,10 +7,8 @@ import type { Story } from '@/lib/types'
 import { createHash } from 'crypto'
 import { MOCK_STORIES } from '@/lib/mockStories'
 
-const QUERIES = [
-  'world news politics war',
-  'climate economy disaster diplomacy',
-]
+const BBC_SOURCE = 'bbc-news'
+const MAX_AGE_MS = 48 * 60 * 60 * 1000 // discard anything older than 48 hours
 
 function timeAgo(iso: string): string {
   const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -24,31 +22,25 @@ async function fetchStories(): Promise<Story[]> {
   const key = process.env.NEWS_API_KEY
   if (!key) throw new Error('NEWS_API_KEY not set')
 
-  const results = await Promise.allSettled(
-    QUERIES.map(q =>
-      fetch(
-        `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&sortBy=publishedAt&pageSize=20&language=en`,
-        { headers: { 'X-Api-Key': key }, cache: 'no-store' }
-      ).then(r => r.json())
-    )
-  )
+  // top-headlines gives current, happening-now stories rather than archived results
+  const result = await fetch(
+    `https://newsapi.org/v2/top-headlines?sources=${BBC_SOURCE}&pageSize=100`,
+    { headers: { 'X-Api-Key': key }, cache: 'no-store' }
+  ).then(r => r.json())
 
-  const articles: any[] = []
-  for (const r of results) {
-    if (r.status === 'fulfilled') {
-      if (r.value.status === 'error') {
-        console.error('NewsAPI error:', r.value.code, r.value.message)
-      } else if (Array.isArray(r.value.articles)) {
-        articles.push(...r.value.articles)
-      }
-    }
+  if (result.status === 'error') {
+    console.error('NewsAPI error:', result.code, result.message)
   }
+
+  const articles: any[] = Array.isArray(result.articles) ? result.articles : []
+  const cutoff = Date.now() - MAX_AGE_MS
 
   const seen = new Set<string>()
   const stories: Story[] = []
 
   for (const a of articles) {
     if (!a.title || !a.url || !a.publishedAt) continue
+    if (new Date(a.publishedAt).getTime() < cutoff) continue
     const id = createHash('md5').update(a.url).digest('hex').slice(0, 8)
     if (seen.has(id)) continue
     seen.add(id)
