@@ -10,7 +10,9 @@ describe('geolocate', () => {
     const result = geolocate(makeArticle('UK Parliament votes on new bill'))
     expect(result).not.toBeNull()
     expect(result!.countryCode).toBe('GB')
-    expect(result!.lat).toBeCloseTo(55.4, 0)
+    // lat should be somewhere within UK bounds (roughly 49–61°N)
+    expect(result!.lat).toBeGreaterThan(49)
+    expect(result!.lat).toBeLessThan(62)
   })
 
   it('returns coords for a US article', () => {

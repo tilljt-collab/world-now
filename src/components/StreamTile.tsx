@@ -6,19 +6,23 @@ interface StreamTileProps {
   region: string
   youtubeId: string
   live: boolean
+  channelUrl: string
   defaultCollapsed?: boolean
 }
 
 const YOUTUBE_ID_RE = /^[A-Za-z0-9_-]{1,20}$/
 
-export default function StreamTile({ name, region, youtubeId, live, defaultCollapsed = false }: StreamTileProps) {
+export default function StreamTile({ name, region, youtubeId, live, channelUrl, defaultCollapsed = false }: StreamTileProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed)
 
   const safeYoutubeId = YOUTUBE_ID_RE.test(youtubeId) ? youtubeId : ''
 
   return (
     <div className="border-b border-[#111828]">
-      <div className="flex justify-between items-center px-[10px] py-[7px] cursor-pointer bg-[#0f1428] hover:bg-[#141a35]">
+      <div
+        className="flex justify-between items-center px-[10px] py-[7px] cursor-pointer bg-[#0f1428] hover:bg-[#141a35]"
+        onClick={() => setCollapsed(c => !c)}
+      >
         <div>
           <div className="text-[11px] font-semibold text-[#ccd8ff]">{name}</div>
           <div className="text-[9px] text-[#556688]">{region}</div>
@@ -30,7 +34,6 @@ export default function StreamTile({ name, region, youtubeId, live, defaultColla
           }
           <button
             className="bg-transparent border-none text-[#556677] text-[10px] px-1 cursor-pointer hover:text-[#aab]"
-            onClick={() => setCollapsed(c => !c)}
             aria-label={collapsed ? 'Expand stream' : 'Collapse stream'}
           >
             {collapsed ? '▼' : '▲'}
@@ -49,6 +52,15 @@ export default function StreamTile({ name, region, youtubeId, live, defaultColla
             loading="lazy"
             className="block"
           />
+          <a
+            href={channelUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-center text-[9px] text-[#556688] hover:text-[#8899bb] py-[4px] border-t border-[#111828]"
+            onClick={e => e.stopPropagation()}
+          >
+            ▶ Watch on YouTube ↗
+          </a>
         </div>
       )}
     </div>

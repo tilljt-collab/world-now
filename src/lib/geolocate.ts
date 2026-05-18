@@ -105,17 +105,65 @@ const COUNTRY_KEYWORDS: Array<[RegExp, string]> = [
   [/\bcote d.ivoire\b|ivory coast/i, 'CI'],
 ]
 
+// Per-country spread radius in degrees (half-width of randomisation area).
+// Larger countries get bigger spreads so multiple stories don't stack on one point.
+const COUNTRY_SPREAD: Record<string, { lat: number; lng: number }> = {
+  // Huge countries
+  RU: { lat: 12, lng: 28 },
+  CA: { lat: 10, lng: 24 },
+  US: { lat: 10, lng: 22 },
+  CN: { lat: 10, lng: 16 },
+  BR: { lat: 12, lng: 14 },
+  AU: { lat:  8, lng: 16 },
+  // Large countries
+  IN: { lat:  8, lng: 10 },
+  SA: { lat:  5, lng:  7 },
+  IR: { lat:  5, lng:  7 }, // Iran
+  MX: { lat:  5, lng:  7 },
+  DZ: { lat:  6, lng:  8 },
+  SD: { lat:  6, lng:  5 },
+  CD: { lat:  6, lng:  7 },
+  KZ: { lat:  6, lng: 10 },
+  // Medium countries
+  UA: { lat:  3, lng:  7 },
+  PK: { lat:  5, lng:  5 },
+  NG: { lat:  4, lng:  4 },
+  ET: { lat:  4, lng:  4 },
+  IQ: { lat:  3, lng:  4 },
+  AF: { lat:  3, lng:  4 },
+  SY: { lat:  2, lng:  2 },
+  YE: { lat:  3, lng:  3 },
+  FR: { lat:  3, lng:  3 },
+  DE: { lat:  2, lng:  2 },
+  TR: { lat:  3, lng:  5 },
+  JP: { lat:  4, lng:  2 },
+  ID: { lat:  4, lng: 10 },
+  // Smaller countries — default applies, but list key ones explicitly
+  GB: { lat:  2, lng:  1 },
+  ES: { lat:  2, lng:  3 },
+  IT: { lat:  3, lng:  2 },
+  PL: { lat:  2, lng:  2 },
+  EG: { lat:  4, lng:  5 },
+  ZA: { lat:  4, lng:  5 },
+  KE: { lat:  3, lng:  3 },
+  // Tiny/dense countries stay tight
+  IL: { lat: 0.8, lng: 0.7 },
+  LB: { lat: 0.4, lng: 0.4 },
+  SG: { lat: 0.1, lng: 0.1 },
+}
+
+const DEFAULT_SPREAD = { lat: 1, lng: 1 }
+
 export function geolocate(article: NewsArticle): GeoResult | null {
   const text = `${article.title} ${article.description}`
   for (const [pattern, code] of COUNTRY_KEYWORDS) {
     if (pattern.test(text)) {
       const centroid = CENTROIDS[code]
       if (!centroid) continue
-      // Add small jitter so overlapping country stories don't stack exactly
-      // Keep jitter small (±0.4) to stay within toBeCloseTo precision bounds
+      const spread = COUNTRY_SPREAD[code] ?? DEFAULT_SPREAD
       return {
-        lat: Math.max(-90,  Math.min(90,  centroid.lat + (Math.random() - 0.5) * 0.8)),
-        lng: Math.max(-180, Math.min(180, centroid.lng + (Math.random() - 0.5) * 0.8)),
+        lat: Math.max(-90,  Math.min(90,  centroid.lat + (Math.random() - 0.5) * 2 * spread.lat)),
+        lng: Math.max(-180, Math.min(180, centroid.lng + (Math.random() - 0.5) * 2 * spread.lng)),
         countryCode: code,
       }
     }

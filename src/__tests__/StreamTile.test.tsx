@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import StreamTile from '@/components/StreamTile'
 
-const tile = { name: 'BBC World News', region: 'Global', youtubeId: 'w_Ma8oQLmSM', live: true }
+const tile = { name: 'BBC World News', region: 'Global', youtubeId: 'w_Ma8oQLmSM', live: true, channelUrl: 'https://www.youtube.com/@BBCNews/live' }
 
 describe('StreamTile', () => {
   it('renders channel name', () => {

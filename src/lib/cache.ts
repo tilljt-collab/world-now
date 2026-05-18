@@ -20,4 +20,4 @@ export class Cache<T> {
 
 // Only works correctly in Node.js runtime; Edge runtime resets state on each cold start
 // Singleton shared across API route invocations in the same process
-export const storyCache = new Cache<Story[]>(3 * 60 * 1000) // 3 min TTL
+export const storyCache = new Cache<Story[]>(30 * 60 * 1000) // 30 min TTL
