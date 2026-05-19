@@ -91,7 +91,10 @@ export default function Shell() {
 
   const visible = stories.filter(s => activeCategories.has(s.category))
   const topHeadlines = [...stories]
-    .sort((a, b) => b.importance - a.importance)
+    .sort((a, b) => {
+      if (b.importance !== a.importance) return b.importance - a.importance
+      return (b.source === 'BBC News' ? 1 : 0) - (a.source === 'BBC News' ? 1 : 0)
+    })
     .slice(0, 5)
     .map(s => s.headline)
 

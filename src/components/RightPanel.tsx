@@ -16,7 +16,10 @@ export default function RightPanel({ stories, onFlyTo, refreshing, preset }: Rig
       const aMatch = storyMatchesPreset(preset, a.category, a.countryCode) ? 1 : 0
       const bMatch = storyMatchesPreset(preset, b.category, b.countryCode) ? 1 : 0
       if (bMatch !== aMatch) return bMatch - aMatch
-      return b.importance - a.importance
+      if (b.importance !== a.importance) return b.importance - a.importance
+      const aBBC = a.source === 'BBC News' ? 1 : 0
+      const bBBC = b.source === 'BBC News' ? 1 : 0
+      return bBBC - aBBC
     })
     .slice(0, 12)
 

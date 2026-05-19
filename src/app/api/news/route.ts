@@ -7,7 +7,15 @@ import type { Story } from '@/lib/types'
 import { createHash } from 'crypto'
 import { MOCK_STORIES } from '@/lib/mockStories'
 
-const BBC_SOURCE = 'bbc-news'
+const PRIMARY_SOURCE = 'bbc-news'
+const SOURCES = [
+  PRIMARY_SOURCE,
+  'reuters',
+  'associated-press',
+  'al-jazeera-english',
+  'the-guardian-uk',
+  'euronews',
+].join(',')
 const MAX_AGE_MS = 48 * 60 * 60 * 1000 // discard anything older than 48 hours
 
 function timeAgo(iso: string): string {
@@ -24,7 +32,7 @@ async function fetchStories(): Promise<Story[]> {
 
   // top-headlines gives current, happening-now stories rather than archived results
   const result = await fetch(
-    `https://newsapi.org/v2/top-headlines?sources=${BBC_SOURCE}&pageSize=100`,
+    `https://newsapi.org/v2/top-headlines?sources=${SOURCES}&pageSize=100`,
     { headers: { 'X-Api-Key': key }, cache: 'no-store' }
   ).then(r => r.json())
 
